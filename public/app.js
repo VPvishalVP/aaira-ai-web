@@ -359,11 +359,11 @@
     primeMobileMedia();
 
     if (!state.unlocked) {
-      // Secret Master Authorization Trigger!
+      // Secret Master Authorization Trigger (Silent display, no speech!)
       generateSecretAuthCode();
     } else {
-      // When system is active: toggle listening
-      toggleListening();
+      // Voice must never stop: ensure listening is active
+      startListening();
     }
   }
 
@@ -372,22 +372,18 @@
     const code = Math.floor(100 + Math.random() * 900).toString();
     state.activeAuthCode = code;
 
-    // Display in the floating holographic pod
+    // Display in the floating holographic pod silently (AI does not speak!)
     DOM.authDigit0.textContent = code[0];
     DOM.authDigit1.textContent = code[1];
     DOM.authDigit2.textContent = code[2];
-    DOM.authVoiceHintText.textContent = `बोलिए: "${code[0]} ${code[1]} ${code[2]}" (या यहाँ टैप करें)`;
+    DOM.authVoiceHintText.textContent = `बोलिए: "${code[0]} ${code[1]} ${code[2]}"`;
     DOM.authCodeBadge.classList.remove('hidden');
 
-    playTone(1046.5, 0.18, 'triangle', 0.25);
+    const promptMsg = `ऑथराइजेशन कोड: <strong>${code}</strong> (कृपया बोलिए: "${code}")`;
+    updateDialogue("Auth Code", promptMsg);
 
-    const promptMsg = `मास्टर, ऑथराइजेशन कोड है: <strong>${code}</strong>। कृपया कोड बोलिए या इस पर टैप करें।`;
-    updateDialogue("Authorization Triggered", promptMsg);
-
-    // Announce code via sweet neural studio voice & activate listening
-    speakText(`मास्टर, ऑथराइजेशन कोड है ${code[0]} ${code[1]} ${code[2]}। कृपया कोड बोलिए।`, () => {
-      startListening();
-    });
+    // AI does NOT speak! Direct user speaks the 3-digit code into the microphone!
+    startListening();
   }
 
   function verifySpokenAuthCode(text) {
@@ -1436,8 +1432,6 @@
       if (DOM.stageDialogueState) {
         DOM.stageDialogueState.innerHTML = '🟢 <span style="color:#00f0ff;">24/7 MIC ACTIVE</span> • बोलिए, मैं सुन रही हूँ 🌸';
       }
-      playTone(587.33, 0.08, 'sine', 0.12);
-      setTimeout(() => playTone(880, 0.12, 'sine', 0.15), 75);
     };
 
     speechRecognizer.onresult = (event) => {
@@ -1474,11 +1468,13 @@
         }
         return;
       }
-      // Quietly auto-restart on silent pause/timeout in 24/7 mode
+      // Instant auto-restart on silent pause/timeout so voice NEVER stops
       if (!state.isSpeaking) {
         setTimeout(() => {
-          try { speechRecognizer.start(); } catch(_) {}
-        }, 300);
+          if (!state.isSpeaking) {
+            try { speechRecognizer.start(); } catch(_) {}
+          }
+        }, 100);
       }
     };
 
@@ -1487,22 +1483,19 @@
       if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.remove('listening');
       if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.remove('listening');
       if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.remove('listening');
-      // 24/7 Ambient Auto-Restart: keeps microphone listening continuously like ChatGPT/Siri
+      // 24/7 Continuous Hands-Free: voice NEVER stops!
       if (!state.isSpeaking) {
         setTimeout(() => {
           if (!state.isSpeaking) {
             try { speechRecognizer.start(); } catch(_) {}
           }
-        }, 150);
+        }, 80);
       }
     };
   }
 
   function handleSpokenInput(transcript) {
     if (!transcript) return;
-
-    // Subtle earcon acknowledgement
-    playTone(1046.5, 0.08, 'sine', 0.12);
 
     // 1. Check if user is giving an AUI Morph or Color command!
     if (checkAndHandleMorphCommand(transcript)) {
@@ -2451,21 +2444,19 @@
       });
     }
 
-    // Modern Voice AI First-Gesture Trigger (like Siri, Google Assistant, ChatGPT Voice)
-    // Tapping anywhere on mobile screen immediately activates real hardware microphone
-    const startAudioOnFirstGesture = () => {
+    // 24/7 Always-On Microphone: Any interaction immediately primes mic and keeps it listening
+    const ensureMicListening = () => {
       initRealMicrophone();
       startListening();
-      window.removeEventListener('click', startAudioOnFirstGesture);
-      window.removeEventListener('touchstart', startAudioOnFirstGesture);
     };
-    window.addEventListener('click', startAudioOnFirstGesture, { passive: true });
-    window.addEventListener('touchstart', startAudioOnFirstGesture, { passive: true });
+    window.addEventListener('click', ensureMicListening, { passive: true });
+    window.addEventListener('touchstart', ensureMicListening, { passive: true });
   }
 
   function initCompanionFeatures() {
     initThreeDCore();
     initSpeechRecognition();
+    startListening();
     initMusicPlayer();
     initVideoPlayer();
     loadCreationsVault();
