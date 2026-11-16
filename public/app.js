@@ -83,6 +83,10 @@
     mainOrbBtn: document.getElementById('mainOrbBtn'),
     aiCoreNucleus: document.getElementById('aiCoreNucleus'),
 
+    // Floating Dashboard Trigger (Top Right)
+    openDashboardBtn: document.getElementById('openDashboardBtn'),
+    auiShapeButtons: document.getElementById('auiShapeButtons'),
+
     // Live Voice Call & Drag Controls
     voiceCallTriggerBtn: document.getElementById('voiceCallTriggerBtn'),
     voiceCallBtnLabel: document.getElementById('voiceCallBtnLabel'),
@@ -437,8 +441,9 @@
 
     primeMobileMedia();
 
-    if (!state.voiceCallActive) {
-      startVoiceConversationMode();
+    if (!state.unlocked) {
+      // 3-Digit Code: Center click generates the code, AI stays silent, user speaks the code to unlock!
+      generateSecretAuthCode();
     } else {
       if (state.isSpeaking) {
         // Barge-in: user tapped core to interrupt AI speech and speak immediately
@@ -462,8 +467,15 @@
     if (DOM.authDigit0) DOM.authDigit0.textContent = code[0];
     if (DOM.authDigit1) DOM.authDigit1.textContent = code[1];
     if (DOM.authDigit2) DOM.authDigit2.textContent = code[2];
-    if (DOM.authVoiceHintText) DOM.authVoiceHintText.textContent = `बोलिए: "${code[0]} ${code[1]} ${code[2]}"`;
+    if (DOM.authVoiceHintText) DOM.authVoiceHintText.textContent = `माइक में बोलिए: "${code[0]} ${code[1]} ${code[2]}"`;
     if (DOM.authCodeBadge) DOM.authCodeBadge.classList.remove('hidden');
+
+    if (DOM.stageDialogueState) {
+      DOM.stageDialogueState.classList.add('visible');
+      DOM.stageDialogueState.innerHTML = `🔒 <strong>AUTH CODE: ${code}</strong> • बोलिए: "${code[0]} ${code[1]} ${code[2]}"`;
+    }
+
+    // AI DOES NOT speak! Master directly speaks the 3-digit code into the microphone!
     startListening();
   }
 
@@ -478,16 +490,16 @@
 
     // 2. Hindi & English words to digits conversion
     const wordMap = {
-      'शून्य': '0', 'zero': '0',
-      'एक': '1', 'one': '1',
-      'दो': '2', 'two': '2',
-      'तीन': '3', 'three': '3',
-      'चार': '4', 'four': '4',
-      'पांच': '5', 'पाँच': '5', 'five': '5',
-      'छह': '6', 'छ:': '6', 'six': '6',
-      'सात': '7', 'seven': '7',
-      'आठ': '8', 'eight': '8',
-      'नौ': '9', 'nine': '9'
+      'शून्य': '0', 'zero': '0', 'ज़ीरो': '0',
+      'एक': '1', 'one': '1', 'वन': '1',
+      'दो': '2', 'two': '2', 'टू': '2',
+      'तीन': '3', 'three': '3', 'थ्री': '3',
+      'चार': '4', 'four': '4', 'फोर': '4',
+      'पांच': '5', 'पाँच': '5', 'five': '5', 'फाइव': '5',
+      'छह': '6', 'छ:': '6', 'six': '6', 'सिक्स': '6',
+      'सात': '7', 'seven': '7', 'सेवन': '7',
+      'आठ': '8', 'eight': '8', 'एट': '8',
+      'नौ': '9', 'nine': '9', 'नाइन': '9'
     };
 
     let converted = text.toLowerCase();
@@ -1684,21 +1696,25 @@
 
   function handleSpokenInput(transcript) {
     if (!transcript) return;
-    state.voiceCallActive = true;
-    state.unlocked = true;
 
-    // 1. Check if user is giving an AUI Morph or Color command!
+    // When locked: ONLY speaking the secret 3-digit code unlocks the AI!
+    if (!state.unlocked) {
+      if (verifySpokenAuthCode(transcript)) {
+        authorizeMaster();
+        return;
+      }
+      if (DOM.stageDialogueState) {
+        DOM.stageDialogueState.classList.add('visible');
+        DOM.stageDialogueState.innerHTML = `<span style="color:#ffcc00;">🎤 सुना: "${escapeHtml(transcript)}" • कोड बोलिए: "${state.activeAuthCode || 'कोड'}"</span>`;
+      }
+      return;
+    }
+
+    // When unlocked: execute any 3D morph, voice command, or conversational chat!
     if (checkAndHandleMorphCommand(transcript)) {
       return;
     }
 
-    // 2. Secret 3-digit Code spoken verification
-    if (verifySpokenAuthCode(transcript)) {
-      authorizeMaster();
-      return;
-    }
-
-    // 3. Natural AI Voice Processing (conversational & commands)
     dispatchVoiceCommand(transcript);
   }
 
@@ -2636,6 +2652,34 @@
     // 3D Shape Badge Click to cycle shapes
     if (DOM.auiShapeBadge) {
       DOM.auiShapeBadge.addEventListener('click', cycleNextShape);
+    }
+
+    // Open Dashboard Button Click
+    if (DOM.openDashboardBtn) {
+      DOM.openDashboardBtn.addEventListener('click', () => {
+        closeAllHUDs();
+        openHUD(DOM.dashboardOverlayHUD);
+        loadCreationsVault();
+      });
+    }
+
+    // 3D Shape Buttons in Dashboard
+    if (DOM.auiShapeButtons) {
+      DOM.auiShapeButtons.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-shape]');
+        if (btn) {
+          const shape = btn.getAttribute('data-shape');
+          morphTo3DShape(shape);
+        }
+      });
+    }
+
+    // Zoom Reset Button
+    if (DOM.zoomResetBtn) {
+      DOM.zoomResetBtn.addEventListener('click', () => {
+        userHasRotated3D = true;
+        set3DZoom(1.0);
+      });
     }
 
     // Voice Persona Switcher Badge Click

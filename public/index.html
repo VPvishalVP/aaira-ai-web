@@ -24,51 +24,42 @@
   <canvas id="unlockBlastCanvas" class="unlock-blast-canvas hidden"></canvas>
 
   <!-- ========================================================
-       UNIFIED CLEAN AUI: VOICE-FIRST SCI-FI COMPANION
-       (Only AUI visible; center click gives secret random code)
+       UNIFIED CLEAN AUI: ONLY 3D AUI VISIBLE ON MAIN STAGE!
+       (All other features reside inside Dashboard; Center Click generates 3-digit Code)
        ======================================================== -->
   <div id="aiVoiceStage" class="ai-voice-stage">
     <div class="cyber-overlay"></div>
     <div class="grid-backdrop"></div>
 
-    <!-- Minimalist Sci-Fi Watermark Status -->
-    <div class="aui-watermark">
-      <span class="status-dot standby" id="statusDot"></span>
-      <span id="systemStatusLabel">VIHUHUHU • AAIRA AI</span>
-      <button id="voicePersonaToggleBtn" class="voice-persona-badge aaira" title="Click to Switch Voice: AAIRA (Female) / VIHUHUHU (Male)">
-        <i class="fa-solid fa-microphone-lines"></i> <span id="currentVoicePersonaLabel">AAIRA (Female)</span>
-      </button>
-    </div>
+    <!-- Minimalist Floating Dashboard Button (Top Right) -->
+    <button id="openDashboardBtn" class="floating-dash-trigger-btn" title="Dashboard & Features (या बोलिए 'Dashboard dikhao')">
+      <i class="fa-solid fa-bars-staggered"></i>
+    </button>
 
-    <!-- Center Stage: Majestic Pure 3D Holographic AUI Core -->
+    <!-- Center Stage: Majestic Pure 3D Holographic AUI Core (Only AUI visible!) -->
     <div class="stage-center-area">
-      <div class="main-orb-wrapper" id="mainOrbWrapper" title="AUI को उंगली से खींचकर स्क्रीन पर कहीं भी ले जाएँ (Drag anywhere) • टैप करके बात करें">
+      <div class="main-orb-wrapper" id="mainOrbWrapper" title="AUI को उंगली से खींचकर स्क्रीन पर कहीं भी ले जाएँ • बीच में क्लिक करने पर 3-अंक का कोड आएगा">
         <canvas id="mainAIOralCanvas" width="420" height="420"></canvas>
-      </div>
 
-      <!-- Live Voice Call & Drag Controls -->
-      <div class="aui-action-controls">
-        <button id="voiceCallTriggerBtn" class="voice-call-trigger-btn" title="Click to start continuous voice conversation">
-          <span class="call-pulse-ring"></span>
-          <i class="fa-solid fa-microphone-lines" id="voiceCallBtnIcon"></i>
-          <span id="voiceCallBtnLabel">Tap to Talk • वॉयस कॉल शुरू करें</span>
-        </button>
-        <button id="resetAuiPosBtn" class="aui-reset-pos-btn" title="AUI को स्क्रीन के बीच में लाएं (Double-tap core or click here)">
-          <i class="fa-solid fa-arrows-to-dot"></i> Center
-        </button>
+        <!-- Secret Authorization Code Floating Pod (Only appears when core is tapped) -->
+        <div id="authCodeBadge" class="auth-code-badge hidden" title="यह 3-अंक का कोड माइक में बोलिए!">
+          <div class="auth-badge-header">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>MASTER AUTH CODE</span>
+          </div>
+          <div class="auth-code-digits" id="authCodeDigits">
+            <span class="auth-digit" id="authDigit0">-</span>
+            <span class="auth-digit" id="authDigit1">-</span>
+            <span class="auth-digit" id="authDigit2">-</span>
+          </div>
+          <div class="auth-badge-footer">
+            <span id="authVoiceHintText">माइक में बोलिए: "यह कोड"</span>
+          </div>
+        </div>
       </div>
 
       <!-- Minimalist Dynamic Subtitle HUD (Appears only when speaking/listening) -->
-      <div class="aui-status-stream" id="stageDialogueState">
-        STANDBY • TAP TO TALK • बोलिए, मैं सुन रही हूँ 🌸
-      </div>
-
-      <!-- Quick Action Pills (Visible when Unlocked) -->
-      <div class="aui-quick-actions" id="auiQuickActions">
-        <button class="quick-pill-btn" id="quickSongBtn"><i class="fa-solid fa-music"></i> 🎵 Song Chalao</button>
-        <button class="quick-pill-btn" id="quickVideoBtn"><i class="fa-brands fa-youtube"></i> 🎬 Video Chalao</button>
-        <button class="quick-pill-btn stop" id="quickStopBtn"><i class="fa-solid fa-stop"></i> 🛑 Band Karo</button>
-      </div>
+      <div class="aui-status-stream" id="stageDialogueState"></div>
     </div>
 
     <!-- Floating Background Task HUD Toast -->
@@ -213,9 +204,65 @@
     <div id="dashboardOverlayHUD" class="feature-overlay-hud hidden">
       <div class="hud-window full-dashboard-window">
         <div class="hud-window-header">
-          <div class="hud-window-title"><i class="fa-solid fa-gauge-high neon-cyan"></i> AAIRA FULL MULTI-DOCK DASHBOARD</div>
+          <div class="hud-window-title"><i class="fa-solid fa-gauge-high neon-cyan"></i> AAIRA MASTER DASHBOARD & ALL FEATURES</div>
           <button class="hud-close-btn" data-target="dashboardOverlayHUD"><i class="fa-solid fa-xmark"></i></button>
         </div>
+
+        <!-- Dashboard Features Control Strip -->
+        <div class="dash-feature-hub">
+          <!-- Voice Persona Switcher -->
+          <div class="dash-hub-group">
+            <span class="dash-group-label"><i class="fa-solid fa-microphone-lines"></i> Voice Persona</span>
+            <button id="voicePersonaToggleBtn" class="dash-ctrl-pill voice-badge aaira" title="Click to Switch Voice: AAIRA (Female) / VIHUHUHU (Male)">
+              <span id="currentVoicePersonaLabel">🌸 AAIRA (Female)</span>
+            </button>
+          </div>
+
+          <!-- Music Player -->
+          <div class="dash-hub-group">
+            <span class="dash-group-label"><i class="fa-solid fa-music"></i> Music Player</span>
+            <div class="dash-music-controls">
+              <button id="audioPrevBtn" class="dash-mini-btn" title="Previous Song"><i class="fa-solid fa-backward-step"></i></button>
+              <button id="audioPlayBtn" class="dash-mini-btn play-btn" title="Play/Pause"><i class="fa-solid fa-play" id="audioPlayIcon"></i></button>
+              <button id="audioNextBtn" class="dash-mini-btn" title="Next Song"><i class="fa-solid fa-forward-step"></i></button>
+              <span class="dash-track-title" id="audioTrackTitle">Midnight Lo-Fi Chill Beats</span>
+            </div>
+          </div>
+
+          <!-- Video & Media Actions -->
+          <div class="dash-hub-group">
+            <span class="dash-group-label"><i class="fa-solid fa-film"></i> Media Center</span>
+            <div class="dash-btn-row">
+              <button class="dash-ctrl-pill" id="quickVideoBtn"><i class="fa-solid fa-play"></i> 4K Cyber Video</button>
+              <button class="dash-ctrl-pill" id="quickSongBtn"><i class="fa-brands fa-youtube"></i> YouTube Music</button>
+              <button class="dash-ctrl-pill stop" id="quickStopBtn"><i class="fa-solid fa-stop"></i> 🛑 Band Karo</button>
+            </div>
+          </div>
+
+          <!-- 3D Shape Morph Buttons -->
+          <div class="dash-hub-group">
+            <span class="dash-group-label"><i class="fa-solid fa-shapes"></i> 3D AUI Shapes</span>
+            <div class="dash-btn-row" id="auiShapeButtons">
+              <button class="dash-ctrl-pill mini" data-shape="SPHERE">Sphere</button>
+              <button class="dash-ctrl-pill mini" data-shape="CUBE">Cube</button>
+              <button class="dash-ctrl-pill mini" data-shape="TORUS">Ring</button>
+              <button class="dash-ctrl-pill mini" data-shape="CRYSTAL">Diamond</button>
+              <button class="dash-ctrl-pill mini" data-shape="VORTEX">Vortex</button>
+              <button class="dash-ctrl-pill mini" data-shape="DNA">DNA</button>
+              <button class="dash-ctrl-pill mini" data-shape="HEART">Heart</button>
+            </div>
+          </div>
+
+          <!-- AUI Screen Drag Reset & Zoom Reset -->
+          <div class="dash-hub-group">
+            <span class="dash-group-label"><i class="fa-solid fa-crosshairs"></i> AUI Screen Controls</span>
+            <div class="dash-btn-row">
+              <button id="resetAuiPosBtn" class="dash-ctrl-pill"><i class="fa-solid fa-arrows-to-dot"></i> Center Screen</button>
+              <button id="zoomResetBtn" class="dash-ctrl-pill"><i class="fa-solid fa-magnifying-glass"></i> Reset Zoom (100%)</button>
+            </div>
+          </div>
+        </div>
+
         <div class="hud-window-body dashboard-grid-body">
           <!-- Left: Chat Studio -->
           <div class="dash-chat-column">
