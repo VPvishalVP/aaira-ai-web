@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AAIRA AI • Vihuhuhu's Quantum Omnipotent System</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💠</text></svg>">
+
+  <!-- Google Fonts: Orbitron, Rajdhani, Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Poppins:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ========================================================
+       SCREEN 1: HOLOGRAPHIC QUANTUM SECURITY GATEWAY
+       ======================================================== -->
+  <div id="authScreen" class="auth-screen">
+    <div class="cyber-overlay"></div>
+    <div class="grid-backdrop"></div>
+
+    <header class="auth-header">
+      <div class="system-badge">
+        <span class="pulse-dot"></span>
+        <span class="badge-text">VIHUHUHU KI AAIRA • QUANTUM GATEWAY 2.0</span>
+      </div>
+      <h1 class="glitch-title" data-text="AAIRA AI">AAIRA AI</h1>
+      <p class="auth-sub">OMNIPOTENT ARTIFICIAL INTELLIGENCE CORE</p>
+    </header>
+
+    <!-- Center Interactive Quantum Orb -->
+    <div class="orb-container">
+      <canvas id="orbCanvas" width="380" height="380"></canvas>
+      <div class="orb-touch-target" id="orbCenterBtn" title="Click to Generate 3-Digit Authorized Key">
+        <div class="orb-inner-pulse"></div>
+        <div class="orb-center-icon">
+          <i class="fa-solid fa-fingerprint"></i>
+          <span class="orb-hint">TAP CORE</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="orb-instruction">
+      <i class="fa-solid fa-hand-pointer pulse-icon"></i>
+      <span>AI के केंद्र में क्लिक करके <strong>3-Digit Authorized Key</strong> प्राप्त करें</span>
+    </p>
+
+    <!-- Holographic Key Verification Card -->
+    <div id="authCard" class="auth-card hidden">
+      <div class="card-glow-border"></div>
+      <div class="card-content">
+        <div class="key-status-row">
+          <span class="status-chip"><i class="fa-solid fa-shield-halved"></i> QUANTUM VERIFICATION</span>
+          <span class="timer-chip" id="keyTimer"><i class="fa-regular fa-clock"></i> 5:00</span>
+        </div>
+
+        <div class="key-display-wrap">
+          <div class="key-label">YOUR 3-DIGIT AUTHORIZED KEY:</div>
+          <div class="key-digits-container" id="generatedKeyWrap">
+            <span class="key-slot" id="slot0">-</span>
+            <span class="key-slot" id="slot1">-</span>
+            <span class="key-slot" id="slot2">-</span>
+          </div>
+        </div>
+
+        <div class="key-input-wrap">
+          <label for="keyInput">AUTHORIZED KEY ENTER / CONFIRM KAREIN:</label>
+          <div class="input-with-action">
+            <input type="text" id="keyInput" maxlength="15" placeholder="Enter 3-digit key" autocomplete="off">
+            <button id="copyKeyBtn" class="btn-icon" title="Copy Key">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="auth-actions">
+          <button id="unlockBtn" class="btn-cyber-primary">
+            <i class="fa-solid fa-lock-open"></i> AUTHORIZE & UNLOCK
+          </button>
+        </div>
+
+        <div class="auth-footer-note">
+          <span>Master Key: <strong>811</strong></span>
+          <span class="dot-separator">•</span>
+          <span>Owner: <strong>Master VIHUHUHU</strong></span>
+        </div>
+
+        <div id="authMessage" class="auth-message"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       SCREEN 2: MAIN AAIRA OMNIPOTENT AI DASHBOARD
+       ======================================================== -->
+  <div id="dashboardScreen" class="dashboard-screen hidden">
+    <div class="cyber-overlay"></div>
+
+    <!-- Top Navigation Bar -->
+    <header class="top-navbar">
+      <div class="nav-left">
+        <div class="brand-hologram">
+          <div class="brand-orb-mini"></div>
+          <div class="brand-info">
+            <div class="brand-title">AAIRA <span class="accent-text">AI</span></div>
+            <div class="brand-status"><span class="status-dot"></span> 24/7 ONLINE • MASTER VIHUHUHU</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Mini Music Bar -->
+      <div class="nav-center-player">
+        <div class="mini-player-track">
+          <i class="fa-solid fa-music neon-music-icon"></i>
+          <span id="miniTrackTitle" class="marquee-text">Midnight Lo-Fi Chill Beats</span>
+        </div>
+        <div class="mini-player-controls">
+          <button id="miniPrevBtn" class="nav-btn-icon" title="Previous Track"><i class="fa-solid fa-backward-step"></i></button>
+          <button id="miniPlayBtn" class="nav-btn-icon play-btn-glow" title="Play/Pause"><i class="fa-solid fa-play"></i></button>
+          <button id="miniNextBtn" class="nav-btn-icon" title="Next Track"><i class="fa-solid fa-forward-step"></i></button>
+        </div>
+        <canvas id="navVisualizer" width="90" height="24"></canvas>
+      </div>
+
+      <div class="nav-right">
+        <!-- Voice TTS Toggle -->
+        <button id="ttsToggleBtn" class="nav-btn-tab active" title="Toggle AI Voice Speech">
+          <i class="fa-solid fa-volume-high"></i> <span class="hide-mobile">VOICE ON</span>
+        </button>
+
+        <!-- Media Center Drawer Toggles -->
+        <button id="toggleMusicBtn" class="nav-btn-tab" title="Open Music Player">
+          <i class="fa-solid fa-headphones"></i> <span class="hide-mobile">MUSIC</span>
+        </button>
+
+        <button id="toggleVideoBtn" class="nav-btn-tab" title="Open Video Player">
+          <i class="fa-solid fa-video"></i> <span class="hide-mobile">VIDEO</span>
+        </button>
+
+        <button id="toggleVaultBtn" class="nav-btn-tab" title="Creations Vault">
+          <i class="fa-solid fa-box-archive"></i> <span class="hide-mobile">VAULT</span>
+        </button>
+
+        <!-- Lock System -->
+        <button id="lockSystemBtn" class="nav-btn-lock" title="Lock AI Core">
+          <i class="fa-solid fa-lock"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Grid -->
+    <div class="dashboard-body">
+
+      <!-- LEFT: Generative Omnipotent AI Chat Studio -->
+      <section class="ai-studio-panel">
+        <div class="studio-banner">
+          <div class="banner-badge">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> "जो आप बोलें, वो तुरंत बन जाए"
+          </div>
+          <div class="banner-model">MODEL: QWEN 27B / GROQ ENGINE</div>
+        </div>
+
+        <!-- Quick Prompts Ribbon -->
+        <div class="quick-prompts-ribbon">
+          <span class="ribbon-label"><i class="fa-solid fa-bolt"></i> QUICK:</span>
+          <div class="prompts-scroll">
+            <button class="quick-chip" data-prompt="Mujhe ek mast Snake Game bana ke do with score, restart and neon styling">🎮 Snake Game</button>
+            <button class="quick-chip" data-prompt="Ek responsive Glassmorphic Neumorphic Calculator bana do full working">🧮 Calculator</button>
+            <button class="quick-chip" data-prompt="Ek Flappy Bird game bana ke do touch controls aur high score ke sath">🕹️ Flappy Bird</button>
+            <button class="quick-chip" data-prompt="Ek Cyberpunk Digital Clock aur Stopwatch bana do with sound effects">⏱️ Cyber Clock</button>
+            <button class="quick-chip" data-prompt="Ek Neon Paint / Drawing Canvas tool bana do with color picker & brush sizes">🎨 Paint Canvas</button>
+            <button class="quick-chip" data-prompt="Ek Tic Tac Toe game banao with Smart AI opponent">🎲 Tic-Tac-Toe</button>
+            <button class="quick-chip" data-prompt="Ek Modern Anime Lo-Fi Portfolio Landing Page banao">✨ Anime Portfolio</button>
+          </div>
+        </div>
+
+        <!-- Chat Conversation Messages -->
+        <div class="chat-container" id="chatContainer">
+          <div class="chat-message assistant-message welcome-msg">
+            <div class="msg-avatar">
+              <div class="avatar-ring"></div>
+              <span>💠</span>
+            </div>
+            <div class="msg-bubble">
+              <div class="msg-header">
+                <span class="sender-name">AAIRA AI (आएरा)</span>
+                <span class="msg-time">Online</span>
+              </div>
+              <div class="msg-text">
+                <p><strong>प्रणाम मास्टर VIHUHUHU! 🙏</strong></p>
+                <p>मैं आपकी सर्वशक्तिमान AI असिस्टेंट <strong>AAIRA</strong> हूँ।</p>
+                <p>✨ <strong>"जो आप बोलेंगे, वो तुरंत बन जाएगा!"</strong> — कोई भी गेम, वेबसाइट, कैलकुलेटर, टूल, या स्क्रिप्ट मांगिए, मैं तुरंत पूरा बनाकर यहीं लाइव चलाकर दिखा दूंगी।</p>
+                <p>🎶 साथ ही आप ऊपर से <strong>Music</strong> और <strong>Video</strong> भी चला सकते हैं!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <div class="chat-input-bar">
+          <div class="voice-status-bar hidden" id="voiceStatusBar">
+            <span class="recording-pulse"></span>
+            <span id="voiceStatusText">Listening to Master Vihuhuhu... (बोलिए)</span>
+          </div>
+
+          <div class="input-controls-row">
+            <!-- Mic Voice Button -->
+            <button id="micBtn" class="btn-mic" title="Speak to AAIRA (Voice Command)">
+              <i class="fa-solid fa-microphone"></i>
+            </button>
+
+            <!-- Text Input -->
+            <textarea id="promptInput" rows="1" placeholder="AAIRA se kuch bhi banwayein (e.g. 'Ek Snake Game banao' ya 'Calculator banao')..." autofocus></textarea>
+
+            <!-- Send Button -->
+            <button id="sendBtn" class="btn-send" title="Send to AAIRA">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: Interactive Multi-Dock (Sandbox / Music / Video / Vault) -->
+      <aside class="media-dock-panel" id="mediaDock">
+
+        <!-- Dock Tabs Header -->
+        <div class="dock-tabs">
+          <button class="dock-tab active" data-dock="sandbox">
+            <i class="fa-solid fa-play"></i> Live Sandbox
+          </button>
+          <button class="dock-tab" data-dock="music">
+            <i class="fa-solid fa-music"></i> Music Player
+          </button>
+          <button class="dock-tab" data-dock="video">
+            <i class="fa-solid fa-video"></i> Video Center
+          </button>
+          <button class="dock-tab" data-dock="vault">
+            <i class="fa-solid fa-box-archive"></i> Vault (<span id="vaultCount">0</span>)
+          </button>
+        </div>
+
+        <!-- 1. LIVE INTERACTIVE SANDBOX RUNNER -->
+        <div class="dock-view active" id="dockViewSandbox">
+          <div class="sandbox-toolbar">
+            <div class="sandbox-title-wrap">
+              <span class="live-dot"></span>
+              <span id="sandboxTitle" class="sandbox-title">Interactive Live Sandbox</span>
+            </div>
+            <div class="sandbox-actions">
+              <button id="sandboxReloadBtn" class="tool-btn" title="Reload App"><i class="fa-solid fa-rotate-right"></i></button>
+              <button id="sandboxSaveBtn" class="tool-btn" title="Save to Vault"><i class="fa-regular fa-bookmark"></i></button>
+              <button id="sandboxFullscreenBtn" class="tool-btn" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+            </div>
+          </div>
+          <div class="sandbox-frame-wrap" id="sandboxFrameWrap">
+            <div class="sandbox-empty-placeholder" id="sandboxPlaceholder">
+              <div class="placeholder-icon"><i class="fa-solid fa-code"></i></div>
+              <h3>LIVE SANDBOX RUNNER</h3>
+              <p>AAIRA se koi bhi app, game, calculator ya website banane ko kahein.</p>
+              <p class="placeholder-tip">Jaise hi AAIRA code banayegi, aap <strong>[▶️ Live Run]</strong> pe click karke yahan turant chala sakte hain!</p>
+              <button class="btn-cyber-outline" id="demoAppBtn">
+                <i class="fa-solid fa-gamepad"></i> Load Demo Cyber Tic-Tac-Toe
+              </button>
+            </div>
+            <iframe id="sandboxIframe" class="sandbox-iframe hidden" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+          </div>
+        </div>
+
+        <!-- 2. BUILT-IN MUSIC PLAYER ("musci chalne ka bhi kar dena") -->
+        <div class="dock-view" id="dockViewMusic">
+          <div class="music-player-card">
+            <!-- Vinyl / Spectrum Visualizer -->
+            <div class="visualizer-container">
+              <canvas id="musicSpectrumCanvas" width="340" height="150"></canvas>
+              <div class="vinyl-record" id="vinylRecord">
+                <div class="vinyl-center">💠</div>
+              </div>
+            </div>
+
+            <!-- Current Track Info -->
+            <div class="track-details">
+              <div class="track-name" id="currentTrackName">Midnight Lo-Fi Chill Beats</div>
+              <div class="track-artist" id="currentTrackArtist">AAIRA Cyber Lo-Fi Radio</div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="track-progress-wrap">
+              <span class="time-stamp" id="currentTime">0:00</span>
+              <input type="range" id="seekSlider" min="0" max="100" value="0" class="cyber-slider">
+              <span class="time-stamp" id="totalDuration">3:45</span>
+            </div>
+
+            <!-- Player Controls -->
+            <div class="audio-controls-row">
+              <button id="audioPrevBtn" class="ctrl-btn" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
+              <button id="audioPlayBtn" class="ctrl-btn-play" title="Play/Pause"><i class="fa-solid fa-play"></i></button>
+              <button id="audioNextBtn" class="ctrl-btn" title="Next"><i class="fa-solid fa-forward-step"></i></button>
+            </div>
+
+            <!-- Volume Slider -->
+            <div class="volume-slider-row">
+              <i class="fa-solid fa-volume-low"></i>
+              <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.75" class="cyber-slider-mini">
+              <i class="fa-solid fa-volume-high"></i>
+            </div>
+
+            <!-- Playlist Selector -->
+            <div class="playlist-section">
+              <div class="playlist-header">
+                <span><i class="fa-solid fa-list-ul"></i> BUILT-IN PLAYLIST</span>
+              </div>
+              <ul class="playlist-list" id="playlistUl">
+                <!-- Dynamically Populated -->
+              </ul>
+            </div>
+
+            <!-- Custom Audio Link -->
+            <div class="custom-media-input">
+              <label><i class="fa-solid fa-link"></i> Custom MP3 / Audio Link:</label>
+              <div class="input-inline">
+                <input type="url" id="customAudioUrl" placeholder="https://example.com/audio.mp3">
+                <button id="loadCustomAudioBtn" class="btn-mini"><i class="fa-solid fa-play"></i> Play</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. BUILT-IN VIDEO PLAYER ("vahi dashbord pe chale uska video bhi") -->
+        <div class="dock-view" id="dockViewVideo">
+          <div class="video-player-card">
+            <div class="video-screen-wrap">
+              <video id="dashboardVideo" controls loop playsinline class="video-element" poster="anime-bg.jpg">
+                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                Your browser does not support video.
+              </video>
+              <iframe id="youtubeVideoFrame" class="youtube-frame hidden" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+
+            <div class="video-title-row">
+              <span id="currentVideoTitle" class="video-title">Cyberpunk Ambient Loop</span>
+              <button id="videoFullscreenBtn" class="btn-icon-tiny" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+            </div>
+
+            <!-- Video Presets Ribbon -->
+            <div class="video-presets-wrap">
+              <div class="presets-label"><i class="fa-solid fa-clapperboard"></i> PRELOADED VIDEOS:</div>
+              <div class="video-chip-row">
+                <button class="video-chip active" data-type="direct" data-src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" data-title="Big Buck Cyber Edition">🎬 Cyber Stream</button>
+                <button class="video-chip" data-type="youtube" data-src="https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1" data-title="Lofi Girl 24/7 Beats">🎧 Lofi Girl Live</button>
+                <button class="video-chip" data-type="youtube" data-src="https://www.youtube.com/embed/4xDzrJKXOOY?autoplay=1" data-title="Synthwave Boy 24/7 Radio">🚀 Synthwave 24/7</button>
+              </div>
+            </div>
+
+            <!-- Custom Video URL Input -->
+            <div class="custom-media-input">
+              <label><i class="fa-brands fa-youtube"></i> Custom Video URL (YouTube ya MP4 Link):</label>
+              <div class="input-inline">
+                <input type="url" id="customVideoUrl" placeholder="https://youtube.com/watch?v=... ya .mp4 URL">
+                <button id="loadCustomVideoBtn" class="btn-mini"><i class="fa-solid fa-play"></i> Play</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. SAVED CREATIONS VAULT -->
+        <div class="dock-view" id="dockViewVault">
+          <div class="vault-container">
+            <div class="vault-header">
+              <h3><i class="fa-solid fa-box-archive"></i> AAIRA CREATIONS VAULT</h3>
+              <p>Turso Cloud Database me saved aapke apps aur games</p>
+            </div>
+            <div class="vault-list" id="vaultList">
+              <div class="vault-empty">Abhi koi creation saved nahi hai. AAIRA se kuch banwayein aur save karein!</div>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+  </div>
+
+  <!-- Audio Element for Music -->
+  <audio id="mainAudioPlayer" crossorigin="anonymous"></audio>
+
+  <!-- JS Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
