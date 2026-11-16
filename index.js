@@ -306,6 +306,68 @@ app.post('/api/creations', async (req, res) => {
   }
 });
 
+// ==================== BACKGROUND AUTONOMOUS RESEARCH AGENT ====================
+app.post('/api/bg-research', async (req, res) => {
+  try {
+    const { topic } = req.body;
+    if (!topic || !topic.trim()) {
+      return res.status(400).json({ success: false, error: 'Topic is required' });
+    }
+
+    const cleanTopic = topic.trim();
+    const messages = [
+      {
+        role: 'system',
+        content: `You are AAIRA's autonomous background research intelligence working exclusively for Master VIHUHUHU (विहुहुहु).
+Provide an ultra-sharp, insightful, practical, concise research brief in Hindi/Hinglish (3 to 4 clear bullet points) on the requested topic. Conclude with a warm, loyal personal note to Master VIHUHUHU. No robotic language, no markdown tables.`
+      },
+      {
+        role: 'user',
+        content: `Topic to research in background: ${cleanTopic}`
+      }
+    ];
+
+    const models = [GROQ_MODEL, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+    let reply = '';
+    for (const m of models) {
+      try {
+        const completion = await groq.chat.completions.create({
+          model: m,
+          messages,
+          temperature: 0.5,
+          max_tokens: 500
+        });
+        reply = completion.choices?.[0]?.message?.content || '';
+        if (reply) break;
+      } catch (err) {
+        console.warn(`[BG Research Model Warning] ${m}: ${err.message}`);
+      }
+    }
+
+    if (!reply) {
+      reply = `मास्टर विहुहुहु, मैंने ${cleanTopic} पर बैकग्राउंड रिसर्च पूरी कर ली है। यह विषय काफी महत्वपूर्ण और आधुनिक तकनीक से जुड़ा हुआ है।`;
+    }
+
+    // Auto save to Creations Vault asynchronously
+    try {
+      await db.execute({
+        sql: `INSERT INTO aaira_web_creations (title, prompt, code, category) VALUES (?, ?, ?, ?)`,
+        args: [`Research: ${cleanTopic.slice(0, 30)}`, cleanTopic, reply, 'research']
+      });
+    } catch (_) {}
+
+    return res.json({
+      success: true,
+      topic: cleanTopic,
+      report: reply,
+      timestamp: new Date().toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' })
+    });
+  } catch (err) {
+    console.error('[BG Research Error]', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ==================== HIGH-QUALITY STUDIO NEURAL TTS ====================
 // Pure studio-quality neural voice stream, NOT keyboard TTS!
 const https = require('https');

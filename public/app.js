@@ -83,6 +83,22 @@
     quickVideoBtn: document.getElementById('quickVideoBtn'),
     quickStopBtn: document.getElementById('quickStopBtn'),
 
+    // 3D Shape Badge & Controls
+    auiShapeBadge: document.getElementById('auiShapeBadge'),
+    auiShapeName: document.getElementById('auiShapeName'),
+    mainOrbWrapper: document.getElementById('mainOrbWrapper'),
+
+    // 24/7 Voice Recorder Live Stream Bar
+    voiceRecorderStream: document.getElementById('voiceRecorderStream'),
+    recStatusLabel: document.getElementById('recStatusLabel'),
+    acousticWaveBars: document.getElementById('acousticWaveBars'),
+
+    // Background Task HUD Toast
+    bgAgentToast: document.getElementById('bgAgentToast'),
+    bgToastTitle: document.getElementById('bgToastTitle'),
+    bgToastDesc: document.getElementById('bgToastDesc'),
+    bgToastClose: document.getElementById('bgToastClose'),
+
     // Minimalist Subtitle Stream
     stageDialogueState: document.getElementById('stageDialogueState'),
 
@@ -401,123 +417,586 @@
   }
 
   // ========================================================
-  // 4. MAJESTIC HOLOGRAPHIC AI ORB (Canvas Renderers)
+  // 4. MAJESTIC 3D HOLOGRAPHIC AI CORE (THREE.JS ENGINE)
+  // Real 3D Quantum Geometries: Sphere, Cube, Torus, Crystal, Vortex, DNA, Heart
+  // Interactive 3D Touch/Drag, Audio Reactive Energy Pulse, Voice Morphing
   // ========================================================
-  let mainOrbCtx = null;
-  let mainParticles = [];
+  let threeScene = null;
+  let threeCamera = null;
+  let threeRenderer = null;
+  let threeParticleSystem = null;
+  let threeCoreMesh = null;
+  let threeOuterRing1 = null;
+  let threeOuterRing2 = null;
+  let threeLight = null;
+  let threeGroup = null;
 
-  function initMainOrbCanvas() {
-    if (!DOM.mainAIOralCanvas) return;
-    mainOrbCtx = DOM.mainAIOralCanvas.getContext('2d');
-    const width = DOM.mainAIOralCanvas.width = 420;
-    const height = DOM.mainAIOralCanvas.height = 420;
+  const PARTICLE_COUNT = 1400;
+  let currentPositions = new Float32Array(PARTICLE_COUNT * 3);
+  let targetPositions = new Float32Array(PARTICLE_COUNT * 3);
 
-    mainParticles = [];
-    for (let i = 0; i < 55; i++) {
-      mainParticles.push({
-        angle: Math.random() * Math.PI * 2,
-        radius: 70 + Math.random() * 105,
-        speed: (0.005 + Math.random() * 0.018) * (Math.random() > 0.5 ? 1 : -1),
-        size: 1.5 + Math.random() * 2.8,
-        color: Math.random() > 0.4 ? '#00f0ff' : '#ff007f',
-        alpha: 0.35 + Math.random() * 0.65
-      });
+  const SHAPE_PRESETS = {
+    SPHERE: '3D Quantum Sphere',
+    CUBE: '3D Matrix Tesseract',
+    TORUS: '3D Energy Chakra',
+    CRYSTAL: '3D Quantum Diamond',
+    VORTEX: '3D Cosmic Singularity',
+    DNA: '3D Cyber Helix',
+    HEART: '3D Companion Core'
+  };
+
+  const SHAPE_KEYS = ['SPHERE', 'CUBE', 'TORUS', 'CRYSTAL', 'VORTEX', 'DNA', 'HEART'];
+  let currentShapeIndex = 0;
+
+  // 3D Parametric Generators
+  function generateSphereTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    const phiSpan = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const y = 1 - (i / (PARTICLE_COUNT - 1)) * 2;
+      const radiusAtY = Math.sqrt(1 - y * y);
+      const theta = phiSpan * i;
+      const r = 85 + (Math.sin(i * 0.3) * 6);
+      arr[i * 3] = Math.cos(theta) * radiusAtY * r;
+      arr[i * 3 + 1] = y * r;
+      arr[i * 3 + 2] = Math.sin(theta) * radiusAtY * r;
     }
-
-    renderMainOrb(0);
+    return arr;
   }
 
-  function renderMainOrb(time) {
-    if (!mainOrbCtx) return;
-    const w = DOM.mainAIOralCanvas.width;
-    const h = DOM.mainAIOralCanvas.height;
-    const cx = w / 2;
-    const cy = h / 2;
+  function generateCubeTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    const S = 65;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const face = Math.floor(Math.random() * 6);
+      const u = (Math.random() - 0.5) * 2 * S;
+      const v = (Math.random() - 0.5) * 2 * S;
+      let x = 0, y = 0, z = 0;
+      if (face === 0) { x = S; y = u; z = v; }
+      else if (face === 1) { x = -S; y = u; z = v; }
+      else if (face === 2) { x = u; y = S; z = v; }
+      else if (face === 3) { x = u; y = -S; z = v; }
+      else if (face === 4) { x = u; y = v; z = S; }
+      else { x = u; y = v; z = -S; }
+      if (i % 3 === 0) { x *= 1.35; y *= 1.35; z *= 1.35; }
+      arr[i * 3] = x;
+      arr[i * 3 + 1] = y;
+      arr[i * 3 + 2] = z;
+    }
+    return arr;
+  }
 
-    mainOrbCtx.clearRect(0, 0, w, h);
-    const t = time * 0.001;
+  function generateTorusTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    const R = 80;
+    const r = 30;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const u = Math.random() * Math.PI * 2;
+      const v = Math.random() * Math.PI * 2;
+      arr[i * 3] = (R + r * Math.cos(v)) * Math.cos(u);
+      arr[i * 3 + 1] = (R + r * Math.cos(v)) * Math.sin(u);
+      arr[i * 3 + 2] = r * Math.sin(v) + (Math.sin(u * 4) * 6);
+    }
+    return arr;
+  }
 
-    let pulse = 1 + Math.sin(t * 3) * 0.1;
+  function generateCrystalTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    const phi = (1 + Math.sqrt(5)) / 2;
+    const verts = [
+      [-1,  phi, 0], [ 1,  phi, 0], [-1, -phi, 0], [ 1, -phi, 0],
+      [ 0, -1,  phi], [ 0,  1,  phi], [ 0, -1, -phi], [ 0,  1, -phi],
+      [ phi, 0, -1], [ phi, 0,  1], [-phi, 0, -1], [-phi, 0,  1]
+    ];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const v1 = verts[Math.floor(Math.random() * verts.length)];
+      const v2 = verts[Math.floor(Math.random() * verts.length)];
+      const t = Math.random();
+      const scale = 54;
+      arr[i * 3] = (v1[0] * (1 - t) + v2[0] * t) * scale + (Math.random() - 0.5) * 6;
+      arr[i * 3 + 1] = (v1[1] * (1 - t) + v2[1] * t) * scale + (Math.random() - 0.5) * 6;
+      arr[i * 3 + 2] = (v1[2] * (1 - t) + v2[2] * t) * scale + (Math.random() - 0.5) * 6;
+    }
+    return arr;
+  }
+
+  function generateVortexTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const arm = i % 3;
+      const progress = Math.pow(Math.random(), 0.7);
+      const r = 18 + progress * 105;
+      const angle = (arm * (Math.PI * 2 / 3)) + (progress * 5.2);
+      const z = (Math.pow(1 - progress, 2) * -38) + (Math.random() - 0.5) * 12;
+      arr[i * 3] = Math.cos(angle) * r;
+      arr[i * 3 + 1] = z;
+      arr[i * 3 + 2] = Math.sin(angle) * r;
+    }
+    return arr;
+  }
+
+  function generateDNATargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    const H = 190;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const strand = i % 2;
+      const t = (i / PARTICLE_COUNT) * Math.PI * 8;
+      const y = (i / PARTICLE_COUNT) * H - (H / 2);
+      const r = 45;
+      const offset = strand === 0 ? 0 : Math.PI;
+      if (i % 6 === 0) {
+        const lerpVal = Math.random();
+        arr[i * 3] = Math.cos(t) * r * (1 - lerpVal * 2);
+        arr[i * 3 + 1] = y;
+        arr[i * 3 + 2] = Math.sin(t) * r * (1 - lerpVal * 2);
+      } else {
+        arr[i * 3] = Math.cos(t + offset) * r + (Math.random() - 0.5) * 6;
+        arr[i * 3 + 1] = y;
+        arr[i * 3 + 2] = Math.sin(t + offset) * r + (Math.random() - 0.5) * 6;
+      }
+    }
+    return arr;
+  }
+
+  function generateHeartTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const t = Math.random() * Math.PI * 2;
+      const scale = 5.2;
+      const x = 16 * Math.pow(Math.sin(t), 3) * scale;
+      const y = (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * scale;
+      const z = (Math.random() - 0.5) * 45;
+      arr[i * 3] = x;
+      arr[i * 3 + 1] = y;
+      arr[i * 3 + 2] = z;
+    }
+    return arr;
+  }
+
+  function initThreeDCore() {
+    if (!window.THREE || !DOM.mainAIOralCanvas) {
+      initFallback2DCanvas();
+      return;
+    }
+
+    try {
+      const width = 420;
+      const height = 420;
+
+      threeScene = new THREE.Scene();
+      threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      threeCamera.position.z = 240;
+
+      threeRenderer = new THREE.WebGLRenderer({
+        canvas: DOM.mainAIOralCanvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: 'high-performance'
+      });
+      threeRenderer.setSize(width, height);
+      threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+      threeGroup = new THREE.Group();
+      threeScene.add(threeGroup);
+
+      // Initialize initial Sphere shape
+      const initialTargets = generateSphereTargets();
+      for (let i = 0; i < PARTICLE_COUNT * 3; i++) {
+        currentPositions[i] = initialTargets[i] * 1.5;
+        targetPositions[i] = initialTargets[i];
+      }
+
+      const particleGeo = new THREE.BufferGeometry();
+      particleGeo.setAttribute('position', new THREE.BufferAttribute(currentPositions, 3));
+
+      // Particle Colors
+      const colors = new Float32Array(PARTICLE_COUNT * 3);
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        colors[i * 3] = 0.0;     // R
+        colors[i * 3 + 1] = 0.94; // G
+        colors[i * 3 + 2] = 1.0;  // B
+      }
+      particleGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      // Quantum Points Material
+      const particleMat = new THREE.PointsMaterial({
+        size: 3.5,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.88,
+        blending: THREE.AdditiveBlending
+      });
+
+      threeParticleSystem = new THREE.Points(particleGeo, particleMat);
+      threeGroup.add(threeParticleSystem);
+
+      // Inner Wireframe Energy Core
+      const coreGeo = new THREE.IcosahedronGeometry(36, 1);
+      const coreMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.35
+      });
+      threeCoreMesh = new THREE.Mesh(coreGeo, coreMat);
+      threeGroup.add(threeCoreMesh);
+
+      // Orbiting 3D Ring 1
+      const ring1Geo = new THREE.TorusGeometry(105, 0.8, 8, 64);
+      const ring1Mat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.28
+      });
+      threeOuterRing1 = new THREE.Mesh(ring1Geo, ring1Mat);
+      threeOuterRing1.rotation.x = Math.PI / 3;
+      threeGroup.add(threeOuterRing1);
+
+      // Orbiting 3D Ring 2
+      const ring2Geo = new THREE.TorusGeometry(120, 0.8, 8, 64);
+      const ring2Mat = new THREE.MeshBasicMaterial({
+        color: 0xff007f,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.22
+      });
+      threeOuterRing2 = new THREE.Mesh(ring2Geo, ring2Mat);
+      threeOuterRing2.rotation.y = Math.PI / 4;
+      threeGroup.add(threeOuterRing2);
+
+      // Lights
+      threeLight = new THREE.PointLight(0x00f0ff, 2, 300);
+      threeLight.position.set(0, 0, 50);
+      threeScene.add(threeLight);
+
+      setup3DDragInteraction();
+      animateThreeD();
+    } catch (err) {
+      console.warn('[Three.js Init Error, Falling back to 2D]', err);
+      initFallback2DCanvas();
+    }
+  }
+
+  // 3D Drag & Touch Rotate Interaction
+  let isDragging3D = false;
+  let prevPointerX = 0;
+  let prevPointerY = 0;
+  let rotSpeedX = 0;
+  let rotSpeedY = 0;
+
+  function setup3DDragInteraction() {
+    const target = DOM.mainOrbWrapper || DOM.mainAIOralCanvas;
+    if (!target) return;
+
+    target.addEventListener('pointerdown', (e) => {
+      isDragging3D = true;
+      prevPointerX = e.clientX;
+      prevPointerY = e.clientY;
+      rotSpeedX = 0;
+      rotSpeedY = 0;
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!isDragging3D || !threeGroup) return;
+      const dx = e.clientX - prevPointerX;
+      const dy = e.clientY - prevPointerY;
+      prevPointerX = e.clientX;
+      prevPointerY = e.clientY;
+
+      threeGroup.rotation.y += dx * 0.008;
+      threeGroup.rotation.x += dy * 0.008;
+      rotSpeedY = dx * 0.004;
+      rotSpeedX = dy * 0.004;
+    });
+
+    window.addEventListener('pointerup', () => {
+      isDragging3D = false;
+    });
+  }
+
+  function animateThreeD() {
+    requestAnimationFrame(animateThreeD);
+    if (!threeRenderer || !threeScene || !threeCamera) return;
+
+    const t = Date.now() * 0.001;
+
+    // Smooth lerp particle morphing
+    if (threeParticleSystem && threeParticleSystem.geometry && threeParticleSystem.geometry.attributes.position) {
+      const posAttr = threeParticleSystem.geometry.attributes.position;
+      const pos = posAttr.array;
+      for (let i = 0; i < PARTICLE_COUNT * 3; i++) {
+        pos[i] += (targetPositions[i] - pos[i]) * 0.075;
+      }
+      posAttr.needsUpdate = true;
+    }
+
+    // Acoustic & State Reactivity
+    let pulseScale = 1.0;
     if (state.isSpeaking) {
-      pulse = 1.15 + Math.sin(t * 8) * 0.22;
+      pulseScale = 1.18 + Math.sin(t * 12) * 0.16;
     } else if (state.isListening) {
-      pulse = 1.1 + Math.sin(t * 6) * 0.16;
-    }
-
-    // Outer Cyber Ring
-    mainOrbCtx.save();
-    mainOrbCtx.translate(cx, cy);
-    mainOrbCtx.rotate(t * 0.2);
-    mainOrbCtx.strokeStyle = state.isSpeaking ? 'rgba(255, 0, 127, 0.45)' : 'rgba(0, 240, 255, 0.35)';
-    mainOrbCtx.lineWidth = 1.5;
-    mainOrbCtx.beginPath();
-    mainOrbCtx.arc(0, 0, 150, 0, Math.PI * 2);
-    mainOrbCtx.stroke();
-
-    for (let i = 0; i < 36; i++) {
-      const angle = (i / 36) * Math.PI * 2;
-      const r1 = i % 3 === 0 ? 158 : 153;
-      const r2 = 150;
-      mainOrbCtx.beginPath();
-      mainOrbCtx.moveTo(Math.cos(angle) * r1, Math.sin(angle) * r1);
-      mainOrbCtx.lineTo(Math.cos(angle) * r2, Math.sin(angle) * r2);
-      mainOrbCtx.stroke();
-    }
-    mainOrbCtx.restore();
-
-    // Orbiting Ellipses
-    mainOrbCtx.save();
-    mainOrbCtx.translate(cx, cy);
-    mainOrbCtx.rotate(-t * 0.3);
-    mainOrbCtx.strokeStyle = state.isListening ? 'rgba(16, 185, 129, 0.55)' : 'rgba(255, 0, 127, 0.4)';
-    mainOrbCtx.lineWidth = 1.2;
-    mainOrbCtx.setLineDash([8, 12]);
-    mainOrbCtx.beginPath();
-    mainOrbCtx.ellipse(0, 0, 125, 85, t * 0.6, 0, Math.PI * 2);
-    mainOrbCtx.stroke();
-    mainOrbCtx.setLineDash([]);
-    mainOrbCtx.restore();
-
-    // Particles
-    for (const p of mainParticles) {
-      p.angle += p.speed;
-      const px = cx + Math.cos(p.angle) * p.radius;
-      const py = cy + Math.sin(p.angle) * p.radius;
-
-      mainOrbCtx.fillStyle = p.color;
-      mainOrbCtx.globalAlpha = p.alpha;
-      mainOrbCtx.shadowColor = p.color;
-      mainOrbCtx.shadowBlur = 8;
-      mainOrbCtx.beginPath();
-      mainOrbCtx.arc(px, py, p.size, 0, Math.PI * 2);
-      mainOrbCtx.fill();
-    }
-    mainOrbCtx.globalAlpha = 1;
-    mainOrbCtx.shadowBlur = 0;
-
-    // Glowing Core
-    const grad = mainOrbCtx.createRadialGradient(cx, cy, 6, cx, cy, 75 * pulse);
-    if (state.isSpeaking) {
-      grad.addColorStop(0, 'rgba(255, 0, 127, 0.85)');
-      grad.addColorStop(0.4, 'rgba(255, 0, 127, 0.4)');
-      grad.addColorStop(0.8, 'rgba(168, 85, 247, 0.2)');
-    } else if (state.isListening) {
-      grad.addColorStop(0, 'rgba(16, 185, 129, 0.85)');
-      grad.addColorStop(0.4, 'rgba(16, 185, 129, 0.4)');
-      grad.addColorStop(0.8, 'rgba(0, 240, 255, 0.2)');
+      pulseScale = 1.08 + Math.sin(t * 8) * 0.1;
     } else {
-      grad.addColorStop(0, 'rgba(0, 240, 255, 0.85)');
-      grad.addColorStop(0.4, 'rgba(0, 240, 255, 0.35)');
-      grad.addColorStop(0.8, 'rgba(168, 85, 247, 0.2)');
+      pulseScale = 1.0 + Math.sin(t * 2.5) * 0.05;
     }
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
-    mainOrbCtx.fillStyle = grad;
-    mainOrbCtx.beginPath();
-    mainOrbCtx.arc(cx, cy, 75 * pulse, 0, Math.PI * 2);
-    mainOrbCtx.fill();
+    if (threeCoreMesh) {
+      threeCoreMesh.scale.set(pulseScale, pulseScale, pulseScale);
+      threeCoreMesh.rotation.x += 0.015;
+      threeCoreMesh.rotation.y += 0.02;
+    }
 
-    requestAnimationFrame(renderMainOrb);
+    if (threeOuterRing1) {
+      threeOuterRing1.rotation.z += 0.012;
+      threeOuterRing1.rotation.x += 0.006;
+    }
+
+    if (threeOuterRing2) {
+      threeOuterRing2.rotation.z -= 0.008;
+      threeOuterRing2.rotation.y += 0.01;
+    }
+
+    // Natural 3D floating rotation + inertia
+    if (threeGroup) {
+      if (!isDragging3D) {
+        rotSpeedY *= 0.94;
+        rotSpeedX *= 0.94;
+        threeGroup.rotation.y += 0.006 + rotSpeedY;
+        threeGroup.rotation.x += rotSpeedX;
+      }
+    }
+
+    threeRenderer.render(threeScene, threeCamera);
+  }
+
+  function morphTo3DShape(name) {
+    const upper = (name || '').toUpperCase();
+    let newTarget = null;
+    let label = '3D Quantum Sphere';
+
+    if (upper.includes('CUBE') || upper.includes('BOX') || upper.includes('MATRIX') || upper.includes('TESSERACT')) {
+      newTarget = generateCubeTargets();
+      state.auiShape = 'CUBE';
+      label = SHAPE_PRESETS.CUBE;
+    } else if (upper.includes('TORUS') || upper.includes('RING') || upper.includes('CHAKRA') || upper.includes('DONUT')) {
+      newTarget = generateTorusTargets();
+      state.auiShape = 'TORUS';
+      label = SHAPE_PRESETS.TORUS;
+    } else if (upper.includes('CRYSTAL') || upper.includes('DIAMOND') || upper.includes('HEERA') || upper.includes('GEM')) {
+      newTarget = generateCrystalTargets();
+      state.auiShape = 'CRYSTAL';
+      label = SHAPE_PRESETS.CRYSTAL;
+    } else if (upper.includes('VORTEX') || upper.includes('BLACK') || upper.includes('GALAXY') || upper.includes('SINGULARITY')) {
+      newTarget = generateVortexTargets();
+      state.auiShape = 'VORTEX';
+      label = SHAPE_PRESETS.VORTEX;
+    } else if (upper.includes('DNA') || upper.includes('HELIX') || upper.includes('SPIRAL')) {
+      newTarget = generateDNATargets();
+      state.auiShape = 'DNA';
+      label = SHAPE_PRESETS.DNA;
+    } else if (upper.includes('HEART') || upper.includes('DIL') || upper.includes('LOVE')) {
+      newTarget = generateHeartTargets();
+      state.auiShape = 'HEART';
+      label = SHAPE_PRESETS.HEART;
+    } else {
+      newTarget = generateSphereTargets();
+      state.auiShape = 'SPHERE';
+      label = SHAPE_PRESETS.SPHERE;
+    }
+
+    targetPositions = newTarget;
+
+    if (DOM.auiShapeName) {
+      DOM.auiShapeName.textContent = label;
+    }
+
+    playTone(1174.66, 0.16, 'triangle', 0.25);
+    updateDialogue('3D AUI Morphed', `AUI Shape transformed to: ${label} ✨`);
+    speakText(`जी मास्टर विहुहुहु, मैंने AUI को ${label} में बदल दिया है!`);
+  }
+
+  function cycleNextShape() {
+    currentShapeIndex = (currentShapeIndex + 1) % SHAPE_KEYS.length;
+    const nextKey = SHAPE_KEYS[currentShapeIndex];
+    morphTo3DShape(nextKey);
+  }
+
+  function setAUIColor(hex, name) {
+    state.auiColor = hex;
+    if (window.THREE && threeParticleSystem) {
+      const c = new THREE.Color(hex);
+      if (threeCoreMesh) threeCoreMesh.material.color.set(c);
+      if (threeLight) threeLight.color.set(c);
+
+      const colors = threeParticleSystem.geometry.attributes.color.array;
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        colors[i * 3] = c.r + (Math.random() - 0.5) * 0.15;
+        colors[i * 3 + 1] = c.g + (Math.random() - 0.5) * 0.15;
+        colors[i * 3 + 2] = c.b + (Math.random() - 0.5) * 0.15;
+      }
+      threeParticleSystem.geometry.attributes.color.needsUpdate = true;
+    }
+
+    if (DOM.auiShapeBadge) {
+      DOM.auiShapeBadge.style.borderColor = hex;
+      DOM.auiShapeBadge.style.color = hex;
+      DOM.auiShapeBadge.style.boxShadow = `0 0 20px ${hex}66`;
+    }
+
+    playTone(880, 0.15, 'sine', 0.2);
+    speakText(`जी मास्टर, मैंने AUI का रंग ${name || 'नया'} कर दिया है!`);
+  }
+
+  // Fallback 2D Canvas Renderer
+  let fallback2DCtx = null;
+  function initFallback2DCanvas() {
+    if (!DOM.mainAIOralCanvas) return;
+    fallback2DCtx = DOM.mainAIOralCanvas.getContext('2d');
+    renderFallback2D();
+  }
+
+  function renderFallback2D() {
+    if (!fallback2DCtx) return;
+    const w = 420, h = 420;
+    fallback2DCtx.clearRect(0, 0, w, h);
+    requestAnimationFrame(renderFallback2D);
+  }
+
+  // ========================================================
+  // BACKGROUND AUTONOMOUS WORKER ENGINE
+  // ========================================================
+  async function triggerBackgroundResearch(topic) {
+    if (!topic || !topic.trim()) return;
+    const clean = topic.trim();
+
+    showBgToast('BACKGROUND RESEARCH ACTIVE', `रिसर्च चालू है: "${clean.slice(0, 30)}"...`);
+    speakText(`जी मास्टर विहुहुहु, मैंने ${clean.slice(0, 35)} पर बैकग्राउंड रिसर्च शुरू कर दी है। पूरा होते ही आपको बता दूँगी।`);
+
+    try {
+      const res = await fetch('/api/bg-research', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: clean })
+      });
+      const data = await res.json();
+
+      if (data && data.success && data.report) {
+        playTone(1318.5, 0.25, 'triangle', 0.28);
+        showBgToast(`RESEARCH READY: ${clean.slice(0, 20)}`, data.report.slice(0, 110) + '...');
+        updateDialogue(`Master: ${clean}`, data.report);
+        speakText(`मास्टर विहुहुहु, ${clean} पर बैकग्राउंड रिसर्च पूरी हो गई है!`);
+        loadCreationsVault();
+      }
+    } catch (err) {
+      console.warn('[BG Research Fail]', err);
+    }
+  }
+
+  async function saveBackgroundNote(text) {
+    const clean = text.replace(/^(background me note likho|background me note banao|background me save karo|yaad rakhna|note karo)\s*/i, '').trim();
+    if (!clean) return;
+
+    try {
+      await fetch('/api/creations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `Note: ${clean.slice(0, 25)}`,
+          prompt: clean,
+          code: clean,
+          category: 'note'
+        })
+      });
+      loadCreationsVault();
+      showBgToast('MEMORY VAULT UPDATED', `Saved: "${clean.slice(0, 40)}"`);
+      playTone(1046.5, 0.15, 'sine', 0.2);
+      speakText('जी मास्टर, मैंने बैकग्राउंड में आपका नोट सेव कर लिया है।');
+    } catch (_) {}
+  }
+
+  function startBackgroundTimer(seconds) {
+    const sec = Math.max(5, parseInt(seconds) || 30);
+    showBgToast('BACKGROUND TIMER ACTIVE', `${sec} सेकंड का टाइमर शुरू...`);
+    speakText(`जी मास्टर, ${sec} सेकंड का बैकग्राउंड टाइमर सेट कर दिया है।`);
+
+    setTimeout(() => {
+      playTone(1567.98, 0.35, 'triangle', 0.3);
+      showBgToast('TIMER COMPLETE! ⏰', `${sec}s टाइमर पूरा हो गया!`);
+      speakText(`मास्टर विहुहुहु, आपका ${sec} सेकंड का टाइमर पूरा हो गया है!`);
+    }, sec * 1000);
+  }
+
+  let bgAmbienceNodes = null;
+
+  function toggleBackgroundAmbience(type = 'rain') {
+    if (bgAmbienceNodes) {
+      stopBackgroundAmbience();
+      speakText('जी मास्टर, बैकग्राउंड साउंड बंद कर दिया है।');
+      return;
+    }
+
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+
+      const bufferSize = ctx.sampleRate * 2;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * 0.15;
+      }
+
+      const whiteNoise = ctx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+      whiteNoise.loop = true;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = type === 'space' ? 'bandpass' : 'lowpass';
+      filter.frequency.setValueAtTime(type === 'space' ? 240 : 850, ctx.currentTime);
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+
+      whiteNoise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      whiteNoise.start();
+
+      bgAmbienceNodes = { ctx, whiteNoise, gain };
+      showBgToast('BACKGROUND AMBIENCE ON', type === 'space' ? '🌌 Cosmic Space Drone Active' : '🌧️ Cyber Rain Ambience Active');
+      speakText('जी मास्टर, बैकग्राउंड में एंबियंस चालू कर दिया है।');
+    } catch (_) {}
+  }
+
+  function stopBackgroundAmbience() {
+    if (bgAmbienceNodes) {
+      try {
+        bgAmbienceNodes.gain.gain.linearRampToValueAtTime(0.001, bgAmbienceNodes.ctx.currentTime + 0.5);
+        setTimeout(() => {
+          try {
+            bgAmbienceNodes.whiteNoise.stop();
+            bgAmbienceNodes.ctx.close();
+          } catch(_) {}
+          bgAmbienceNodes = null;
+        }, 600);
+      } catch(_) {
+        bgAmbienceNodes = null;
+      }
+    }
+  }
+
+  function showBgToast(title, desc) {
+    if (!DOM.bgAgentToast) return;
+    if (DOM.bgToastTitle) DOM.bgToastTitle.textContent = title;
+    if (DOM.bgToastDesc) DOM.bgToastDesc.textContent = desc;
+    DOM.bgAgentToast.classList.remove('hidden');
+
+    clearTimeout(state.toastTimer);
+    state.toastTimer = setTimeout(() => {
+      if (DOM.bgAgentToast) DOM.bgAgentToast.classList.add('hidden');
+    }, 8000);
   }
 
 
@@ -567,6 +1046,12 @@
 
       state.isSpeaking = true;
       DOM.mainOrbBtn.classList.add('speaking');
+      if (DOM.voiceRecorderStream) {
+        DOM.voiceRecorderStream.classList.add('speaking');
+      }
+      if (DOM.recStatusLabel) {
+        DOM.recStatusLabel.textContent = '🌸 AI SPEAKING...';
+      }
       if (DOM.stageDialogueState) {
         DOM.stageDialogueState.textContent = 'Speaking... (बोल रही हूँ)';
       }
@@ -582,6 +1067,12 @@
         finished = true;
         state.isSpeaking = false;
         DOM.mainOrbBtn.classList.remove('speaking');
+        if (DOM.voiceRecorderStream) {
+          DOM.voiceRecorderStream.classList.remove('speaking');
+        }
+        if (DOM.recStatusLabel) {
+          DOM.recStatusLabel.textContent = '🟢 24/7 VOICE RECORDER ACTIVE';
+        }
         if (DOM.stageDialogueState) {
           DOM.stageDialogueState.textContent = '🟢 24/7 Mic Active • मास्टर, जो बोलेंगे वो काम होगा';
         }
@@ -651,6 +1142,13 @@
     speechRecognizer.onstart = () => {
       state.isListening = true;
       DOM.mainOrbBtn.classList.add('listening');
+      if (DOM.voiceRecorderStream) {
+        DOM.voiceRecorderStream.classList.remove('speaking');
+        DOM.voiceRecorderStream.classList.add('active');
+      }
+      if (DOM.recStatusLabel) {
+        DOM.recStatusLabel.textContent = '🟢 24/7 VOICE RECORDER ACTIVE';
+      }
       if (DOM.stageDialogueState) {
         DOM.stageDialogueState.textContent = '🟢 24/7 LISTENING TO MASTER...';
       }
@@ -846,7 +1344,104 @@
       return;
     }
 
-    // Command 7: BUILD APPS / GAMES / OMNIPOTENT CODE GENERATION ("Game banao" / "Calculator banao")
+    // Command 7: 3D AUI SHAPE MORPH COMMANDS ("Cube karo" / "Sphere karo" / "Ring karo" / "AUI aaisa karo")
+    if (lower.includes('cube') || lower.includes('box banao') || lower.includes('dabba') || lower.includes('matrix cube') || lower.includes('tesseract')) {
+      morphTo3DShape('CUBE');
+      return;
+    }
+    if (lower.includes('sphere') || lower.includes('gola') || lower.includes('round') || lower.includes('ball') || lower.includes('default aui')) {
+      morphTo3DShape('SPHERE');
+      return;
+    }
+    if (lower.includes('ring') || lower.includes('chakra') || lower.includes('torus') || lower.includes('donut')) {
+      morphTo3DShape('TORUS');
+      return;
+    }
+    if (lower.includes('crystal') || lower.includes('diamond') || lower.includes('heera') || lower.includes('gem')) {
+      morphTo3DShape('CRYSTAL');
+      return;
+    }
+    if (lower.includes('black hole') || lower.includes('vortex') || lower.includes('galaxy') || lower.includes('tornado') || lower.includes('singularity')) {
+      morphTo3DShape('VORTEX');
+      return;
+    }
+    if (lower.includes('dna') || lower.includes('helix') || lower.includes('spiral')) {
+      morphTo3DShape('DNA');
+      return;
+    }
+    if (lower.includes('heart') || lower.includes('dil banao') || lower.includes('dil karo')) {
+      morphTo3DShape('HEART');
+      return;
+    }
+    if (
+      lower.includes('aui badlo') || lower.includes('shape badlo') || lower.includes('aui change') ||
+      lower.includes('aui aaisa') || lower.includes('aisa aui') || lower.includes('3d badlo') ||
+      lower.includes('next shape') || lower.includes('shape change')
+    ) {
+      cycleNextShape();
+      return;
+    }
+
+    // Command 8: 3D AUI COLOR SHIFT COMMANDS ("Golden karo" / "Green karo" / "Red karo" / "Blue karo")
+    if (lower.includes('golden') || lower.includes('gold color') || lower.includes('peela')) {
+      setAUIColor('#ffd700', 'गोल्डन (Gold)');
+      return;
+    }
+    if (lower.includes('green') || lower.includes('hara color') || lower.includes('emerald')) {
+      setAUIColor('#00ff88', 'एमराल्ड ग्रीन (Green)');
+      return;
+    }
+    if (lower.includes('red') || lower.includes('lal color') || lower.includes('crimson')) {
+      setAUIColor('#ff0033', 'रेड अलर्ट (Red)');
+      return;
+    }
+    if (lower.includes('pink') || lower.includes('gulabi') || lower.includes('magenta')) {
+      setAUIColor('#ff007f', 'सिंथवेव पिंक (Pink)');
+      return;
+    }
+    if (lower.includes('blue') || lower.includes('neela') || lower.includes('cyan')) {
+      setAUIColor('#00f0ff', 'साइबर नियॉन ब्लू (Cyan)');
+      return;
+    }
+    if (lower.includes('purple') || lower.includes('baingani') || lower.includes('violet')) {
+      setAUIColor('#a855f7', 'डीप स्पेस वॉयलेट (Purple)');
+      return;
+    }
+
+    // Command 9: BACKGROUND AUTONOMOUS WORKER COMMANDS ("Background me research karo" / "Background me note likho")
+    if (lower.includes('background me research') || lower.includes('background research') || lower.includes('background me pata') || lower.includes('background me dhoondo')) {
+      const topic = text.replace(/.*(background me research karo|background research karo|background me pata karo|background me dhoondo|background me)\s*/i, '').trim();
+      triggerBackgroundResearch(topic || 'latest AI technology & future trends');
+      return;
+    }
+
+    if (lower.includes('background me note') || lower.includes('background me save') || lower.includes('yaad rakhna')) {
+      saveBackgroundNote(text);
+      return;
+    }
+
+    if (lower.includes('barish') || lower.includes('rain ambience') || lower.includes('rain sound') || lower.includes('background sound chalao')) {
+      toggleBackgroundAmbience('rain');
+      return;
+    }
+    if (lower.includes('space drone') || lower.includes('space sound') || lower.includes('antariksh')) {
+      toggleBackgroundAmbience('space');
+      return;
+    }
+    if (lower.includes('sound band') || lower.includes('ambience band') || lower.includes('background sound band')) {
+      stopBackgroundAmbience();
+      speakText('जी मास्टर, बैकग्राउंड साउंड बंद कर दिया है।');
+      return;
+    }
+
+    if (lower.includes('timer') || lower.includes('अलार्म')) {
+      const match = text.match(/\d+/);
+      const secs = match ? parseInt(match[0]) : 30;
+      startBackgroundTimer(secs);
+      return;
+    }
+
+    // Command 10: BUILD APPS / GAMES / OMNIPOTENT CODE GENERATION ("Game banao" / "Calculator banao")
     handleOmnipotentCodeRequest(text);
   }
 
@@ -1428,10 +2023,21 @@
         alert('App Creations Vault me save ho gaya!');
       }
     });
+    // 3D Shape Badge Click to cycle shapes
+    if (DOM.auiShapeBadge) {
+      DOM.auiShapeBadge.addEventListener('click', cycleNextShape);
+    }
+
+    // Close Background Toast
+    if (DOM.bgToastClose) {
+      DOM.bgToastClose.addEventListener('click', () => {
+        if (DOM.bgAgentToast) DOM.bgAgentToast.classList.add('hidden');
+      });
+    }
   }
 
   function initCompanionFeatures() {
-    initMainOrbCanvas();
+    initThreeDCore();
     initSpeechRecognition();
     initMusicPlayer();
     initVideoPlayer();

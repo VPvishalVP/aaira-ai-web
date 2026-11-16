@@ -39,10 +39,15 @@
 
     <!-- Center Stage: Majestic Pure Holographic AUI Core -->
     <div class="stage-center-area">
+      <!-- 3D Shape & Color Badge (Voice Morphable) -->
+      <div class="aui-3d-shape-badge" id="auiShapeBadge" title="बोलिए 'Cube karo' या 'Sphere karo' AUI बदलने के लिए">
+        <i class="fa-solid fa-shapes"></i> <span id="auiShapeName">3D QUANTUM SPHERE</span>
+      </div>
+
       <div class="main-orb-wrapper">
         <canvas id="mainAIOralCanvas" width="420" height="420"></canvas>
-        <div class="main-orb-touch-target" id="mainOrbBtn" title="AAIRA Quantum Core (Click for Auth Code)">
-          <!-- Living Holographic AI Core (No keyboard mic or tap text!) -->
+        <div class="main-orb-touch-target" id="mainOrbBtn" title="AAIRA 3D Quantum Core (Tap to Auth / Drag in 3D)">
+          <!-- Living Holographic AI Core -->
           <div class="ai-core-gyro-ring"></div>
           <div class="ai-core-energy-iris"></div>
           <div class="ai-core-nucleus" id="aiCoreNucleus">
@@ -76,12 +81,31 @@
         STANDBY • TAP CORE TO ACTIVATE
       </div>
 
+      <!-- 24/7 Persistent Hands-Free Voice Recorder Stream -->
+      <div class="voice-recorder-24x7-stream" id="voiceRecorderStream">
+        <div class="rec-dot-live"></div>
+        <span class="rec-label" id="recStatusLabel">24/7 VOICE RECORDER ACTIVE</span>
+        <div class="acoustic-wave-bars" id="acousticWaveBars">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
       <!-- Quick Action Pills (Visible when Unlocked) -->
       <div class="aui-quick-actions hidden" id="auiQuickActions">
         <button class="quick-pill-btn" id="quickSongBtn"><i class="fa-solid fa-music"></i> 🎵 Song Chalao</button>
         <button class="quick-pill-btn" id="quickVideoBtn"><i class="fa-brands fa-youtube"></i> 🎬 Video Chalao</button>
         <button class="quick-pill-btn stop" id="quickStopBtn"><i class="fa-solid fa-stop"></i> 🛑 Band Karo</button>
       </div>
+    </div>
+
+    <!-- Floating Background Task HUD Toast -->
+    <div id="bgAgentToast" class="bg-agent-toast hidden">
+      <div class="bg-toast-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+      <div class="bg-toast-body">
+        <div class="bg-toast-title" id="bgToastTitle">BACKGROUND TASK</div>
+        <div class="bg-toast-desc" id="bgToastDesc">AI is working in background...</div>
+      </div>
+      <button class="bg-toast-close" id="bgToastClose"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
     <!-- Direct YouTube Floating Stage (On Top of AUI: Plays Song/Video, closes on 'Band karo') -->
@@ -240,6 +264,9 @@
 
   <!-- Audio Element for Music -->
   <audio id="mainAudioPlayer" crossorigin="anonymous"></audio>
+
+  <!-- Three.js 3D Holographic Engine -->
+  <script src="three.min.js"></script>
 
   <!-- Main JavaScript Controller -->
   <script src="app.js"></script>
