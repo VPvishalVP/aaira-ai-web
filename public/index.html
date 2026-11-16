@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AAIRA AI • Vihuhuhu's Quantum Omnipotent Companion</title>
+  <title>AAIRA AI • Vihuhuhu's Voice Omnipotent AI</title>
   
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💠</text></svg>">
@@ -20,98 +20,71 @@
 </head>
 <body>
 
+  <!-- Fullscreen Warp Unlock Blast Canvas (Triggered on 3-digit password unlock) -->
+  <canvas id="unlockBlastCanvas" class="unlock-blast-canvas hidden"></canvas>
+
   <!-- ========================================================
-       SCREEN 1: IMMERSIVE AI VOICE CONVERSATION HUB
-       (No codes! Just talk to AAIRA directly. Say "Dashboard" to go to dashboard)
+       SCREEN 1: CINEMATIC 3-DIGIT PASSWORD GATEWAY
        ======================================================== -->
-  <div id="voiceHubScreen" class="voice-hub-screen">
+  <div id="portalGateway" class="portal-gateway">
     <div class="cyber-overlay"></div>
     <div class="grid-backdrop"></div>
 
-    <!-- Hub Header -->
-    <header class="hub-header">
-      <div class="hub-badge">
-        <span class="pulse-dot"></span>
-        <span>VIHUHUHU KI AAIRA • QUANTUM AI 2.0</span>
+    <div class="portal-card" id="portalCard">
+      <div class="card-glow-border"></div>
+
+      <!-- Portal Header -->
+      <header class="portal-header">
+        <div class="system-badge">
+          <span class="pulse-dot"></span>
+          <span>VIHUHUHU KI AAIRA • QUANTUM GATEWAY</span>
+        </div>
+        <h1 class="portal-title">AAIRA AI</h1>
+        <p class="portal-sub">ENTER 3-DIGIT ACCESS PASSWORD</p>
+      </header>
+
+      <!-- Center Mini Quantum Lock Orb -->
+      <div class="lock-orb-container">
+        <canvas id="portalOrbCanvas" width="160" height="160"></canvas>
+        <div class="lock-orb-center">
+          <i class="fa-solid fa-lock" id="portalLockIcon"></i>
+        </div>
       </div>
 
-      <div class="hub-header-actions">
-        <!-- Auto Listen Switch -->
-        <button id="autoListenToggle" class="hub-toggle-btn active" title="Toggle Auto-Listen after AAIRA speaks">
-          <i class="fa-solid fa-ear-listen"></i> <span>AUTO-LISTEN: ON</span>
+      <!-- 3 Digit Password Display -->
+      <div class="pin-display-row" id="pinDisplayRow">
+        <div class="pin-digit-box" id="pinDigit0">-</div>
+        <div class="pin-digit-box" id="pinDigit1">-</div>
+        <div class="pin-digit-box" id="pinDigit2">-</div>
+      </div>
+
+      <!-- Status Message -->
+      <div id="portalMessage" class="portal-message">3-Digit Password enter karein (Master: 811)</div>
+
+      <!-- Futuristic Cyber Keypad -->
+      <div class="cyber-keypad">
+        <button class="key-btn" data-num="1">1</button>
+        <button class="key-btn" data-num="2">2</button>
+        <button class="key-btn" data-num="3">3</button>
+        <button class="key-btn" data-num="4">4</button>
+        <button class="key-btn" data-num="5">5</button>
+        <button class="key-btn" data-num="6">6</button>
+        <button class="key-btn" data-num="7">7</button>
+        <button class="key-btn" data-num="8">8</button>
+        <button class="key-btn" data-num="9">9</button>
+        <button class="key-btn key-action" id="keyClearBtn" title="Clear">C</button>
+        <button class="key-btn" data-num="0">0</button>
+        <button class="key-btn key-action" id="keyBackspaceBtn" title="Backspace"><i class="fa-solid fa-delete-left"></i></button>
+      </div>
+
+      <!-- Alternative Input & Quick Random Key Generator -->
+      <div class="portal-footer-actions">
+        <button id="generateRandomKeyBtn" class="link-btn">
+          <i class="fa-solid fa-dice"></i> Random Key Generate Karein
         </button>
-
-        <!-- Direct Jump to Dashboard Button -->
-        <button id="hubGoDashboardBtn" class="btn-hub-dashboard" title="Open Full Dashboard">
-          <i class="fa-solid fa-gauge-high"></i> <span>DASHBOARD</span> <i class="fa-solid fa-arrow-right"></i>
-        </button>
-      </div>
-    </header>
-
-    <!-- Center Stage: Holographic Quantum AI Orb & Speech Avatar -->
-    <div class="hub-center-stage">
-      <div class="orb-visualizer-wrapper">
-        <canvas id="hubOrbCanvas" width="400" height="400"></canvas>
-        
-        <!-- Orb Tap-to-Talk Interactive Target -->
-        <div class="hub-orb-core" id="hubOrbCore" title="Click to Speak / Stop">
-          <div class="orb-core-rings"></div>
-          <div class="orb-core-center">
-            <i class="fa-solid fa-microphone-lines" id="hubOrbIcon"></i>
-            <span id="hubOrbText" class="orb-status-text">TAP TO SPEAK</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Real-time Conversational Speech Transcript Display -->
-      <div class="hub-dialogue-card" id="hubDialogueCard">
-        <div class="dialogue-status-row">
-          <span class="dialogue-ai-tag"><i class="fa-solid fa-robot"></i> AAIRA (आएरा)</span>
-          <span class="dialogue-state" id="dialogueState">Ready • मास्टर, मैं सुन रही हूँ</span>
-        </div>
-
-        <div class="dialogue-content" id="dialogueContent">
-          <p class="dialogue-welcome"><strong>नमस्ते मास्टर VIHUHUHU! 🙏</strong></p>
-          <p>मुझसे सीधे बात करिए! जो बोलेंगे वो कोड तुरंत बन जाएगा।</p>
-          <p class="dialogue-hint">👉 डैशबोर्ड पर जाने के लिए बोलिए: <strong>"Dashboard Kholo"</strong> या ऊपर बटन दबाएं।</p>
-        </div>
-
-        <!-- Generated Code Card on Hub (if user asks to build something) -->
-        <div id="hubCodeNotification" class="hub-code-card hidden">
-          <div class="hub-code-info">
-            <i class="fa-solid fa-code"></i>
-            <div>
-              <div class="hub-code-title" id="hubCodeTitle">Generated Application</div>
-              <div class="hub-code-desc">कोड तैयार है! डैशबोर्ड में लाइव चलाएं या देखें।</div>
-            </div>
-          </div>
-          <button id="hubRunInDashBtn" class="btn-cyber-primary-sm">
-            <i class="fa-solid fa-play"></i> LIVE CHALAO
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Conversational Controls -->
-    <div class="hub-bottom-bar">
-      <!-- Quick Voice Chips -->
-      <div class="hub-chips-row">
-        <button class="voice-chip" data-cmd="Dashboard Kholo"><i class="fa-solid fa-gauge"></i> "Dashboard Kholo"</button>
-        <button class="voice-chip" data-cmd="Ek mast Snake Game banao"><i class="fa-solid fa-gamepad"></i> "Snake Game Banao"</button>
-        <button class="voice-chip" data-cmd="Ek stylish Neon Calculator bana do"><i class="fa-solid fa-calculator"></i> "Calculator Banao"</button>
-        <button class="voice-chip" data-cmd="Ek mast Gaana bajao"><i class="fa-solid fa-music"></i> "Gaana Bajao"</button>
-        <button class="voice-chip" data-cmd="Video chalao dashboard pe"><i class="fa-solid fa-video"></i> "Video Chalao"</button>
-        <button class="voice-chip" data-cmd="Tum mere liye kya kya kar sakti ho?"><i class="fa-solid fa-wand-magic-sparkles"></i> "Tum kya kar sakti ho?"</button>
-      </div>
-
-      <!-- Input Bar -->
-      <div class="hub-input-wrapper">
-        <button id="hubMicBtn" class="hub-mic-btn" title="Speak to AAIRA">
-          <i class="fa-solid fa-microphone"></i>
-        </button>
-        <input type="text" id="hubTextInput" placeholder="AAIRA se baat karein ya kuch bhi banwayein (e.g. 'Dashboard kholo' ya 'Game banao')..." autocomplete="off">
-        <button id="hubSendBtn" class="hub-send-btn" title="Send">
-          <i class="fa-solid fa-paper-plane"></i>
+        <span class="dot-separator">•</span>
+        <button id="masterUnlockBtn" class="link-btn">
+          <i class="fa-solid fa-key"></i> Master Key (811) se Kholein
         </button>
       </div>
     </div>
@@ -119,309 +92,224 @@
 
 
   <!-- ========================================================
-       SCREEN 2: MAIN AAIRA OMNIPOTENT AI DASHBOARD
-       (Full Code Studio, Live Sandbox, Guaranteed Music & Video)
+       SCREEN 2: CLEAN, IMMERSIVE VOICE-FIRST AI COMPANION
+       (All features stay hidden until voice commanded!)
        ======================================================== -->
-  <div id="dashboardScreen" class="dashboard-screen hidden">
+  <div id="aiVoiceStage" class="ai-voice-stage hidden">
     <div class="cyber-overlay"></div>
+    <div class="grid-backdrop"></div>
 
-    <!-- Top Navigation Bar -->
-    <header class="top-navbar">
-      <div class="nav-left">
-        <!-- Return to Voice Hub Button -->
-        <button id="backToHubBtn" class="nav-btn-hub" title="Go back to Voice AI Hub">
-          <i class="fa-solid fa-microphone-lines"></i> <span>VOICE HUB</span>
-        </button>
-
-        <div class="brand-hologram">
-          <div class="brand-orb-mini"></div>
-          <div class="brand-info">
-            <div class="brand-title">AAIRA <span class="accent-text">AI</span></div>
-            <div class="brand-status"><span class="status-dot"></span> 24/7 ONLINE • MASTER VIHUHUHU</div>
-          </div>
+    <!-- Top Navigation HUD -->
+    <header class="stage-top-hud">
+      <div class="stage-brand">
+        <div class="brand-orb-mini"></div>
+        <div class="brand-info">
+          <div class="brand-title">AAIRA <span class="accent-text">AI</span></div>
+          <div class="brand-status"><span class="status-dot"></span> 24/7 VOICE COMMANDS ACTIVE • MASTER VIHUHUHU</div>
         </div>
       </div>
 
-      <!-- Center Mini Music Bar -->
-      <div class="nav-center-player">
-        <div class="mini-player-track">
-          <i class="fa-solid fa-music neon-music-icon"></i>
-          <span id="miniTrackTitle" class="marquee-text">Midnight Lo-Fi Chill Beats</span>
-        </div>
-        <div class="mini-player-controls">
-          <button id="miniPrevBtn" class="nav-btn-icon" title="Previous Track"><i class="fa-solid fa-backward-step"></i></button>
-          <button id="miniPlayBtn" class="nav-btn-icon play-btn-glow" title="Play/Pause"><i class="fa-solid fa-play"></i></button>
-          <button id="miniNextBtn" class="nav-btn-icon" title="Next Track"><i class="fa-solid fa-forward-step"></i></button>
-        </div>
-        <canvas id="navVisualizer" width="90" height="24"></canvas>
-      </div>
-
-      <div class="nav-right">
+      <div class="stage-hud-actions">
         <!-- Voice TTS Toggle -->
-        <button id="ttsToggleBtn" class="nav-btn-tab active" title="Toggle AI Voice Speech">
+        <button id="stageTtsToggle" class="hud-pill-btn active" title="Toggle Voice Response">
           <i class="fa-solid fa-volume-high"></i> <span class="hide-mobile">VOICE ON</span>
         </button>
 
-        <!-- Media Center Drawer Toggles -->
-        <button id="toggleSandboxBtn" class="nav-btn-tab active" title="Open Sandbox">
-          <i class="fa-solid fa-laptop-code"></i> <span class="hide-mobile">SANDBOX</span>
-        </button>
-
-        <button id="toggleMusicBtn" class="nav-btn-tab" title="Open Music Player">
-          <i class="fa-solid fa-headphones"></i> <span class="hide-mobile">MUSIC</span>
-        </button>
-
-        <button id="toggleVideoBtn" class="nav-btn-tab" title="Open Video Player">
-          <i class="fa-solid fa-video"></i> <span class="hide-mobile">VIDEO</span>
-        </button>
-
-        <button id="toggleVaultBtn" class="nav-btn-tab" title="Creations Vault">
-          <i class="fa-solid fa-box-archive"></i> <span class="hide-mobile">VAULT</span>
+        <!-- Lock System Button -->
+        <button id="stageLockBtn" class="hud-lock-btn" title="Lock System">
+          <i class="fa-solid fa-lock"></i>
         </button>
       </div>
     </header>
 
-    <!-- Main Workspace Grid -->
-    <div class="dashboard-body">
-
-      <!-- LEFT: Generative Omnipotent AI Chat Studio ("जो बोलें वो बन जाए") -->
-      <section class="ai-studio-panel">
-        <div class="studio-banner">
-          <div class="banner-badge">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> "जो आप बोलें, वो तुरंत बन जाए"
-          </div>
-          <div class="banner-model">MODEL: GROQ QWEN / GPT-OSS 120B</div>
-        </div>
-
-        <!-- Quick Prompts Ribbon -->
-        <div class="quick-prompts-ribbon">
-          <span class="ribbon-label"><i class="fa-solid fa-bolt"></i> QUICK:</span>
-          <div class="prompts-scroll">
-            <button class="quick-chip" data-prompt="Mujhe ek mast Snake Game bana ke do with score, restart and neon styling">🎮 Snake Game</button>
-            <button class="quick-chip" data-prompt="Ek responsive Glassmorphic Neumorphic Calculator bana do full working">🧮 Calculator</button>
-            <button class="quick-chip" data-prompt="Ek Flappy Bird game bana ke do touch controls aur high score ke sath">🕹️ Flappy Bird</button>
-            <button class="quick-chip" data-prompt="Ek Cyberpunk Digital Clock aur Stopwatch bana do with sound effects">⏱️ Cyber Clock</button>
-            <button class="quick-chip" data-prompt="Ek Neon Paint / Drawing Canvas tool bana do with color picker & brush sizes">🎨 Paint Canvas</button>
-            <button class="quick-chip" data-prompt="Ek Tic Tac Toe game banao with Smart AI opponent">🎲 Tic-Tac-Toe</button>
-            <button class="quick-chip" data-prompt="Ek Modern Anime Lo-Fi Portfolio Landing Page banao">✨ Anime Portfolio</button>
+    <!-- Center Stage: Majestic Voice-Reactive Quantum AI Orb -->
+    <div class="stage-center-area">
+      <div class="main-orb-wrapper">
+        <canvas id="mainAIOralCanvas" width="420" height="420"></canvas>
+        <div class="main-orb-touch-target" id="mainOrbBtn" title="Click to Speak / Stop">
+          <div class="orb-pulsing-rings"></div>
+          <div class="orb-icon-center">
+            <i class="fa-solid fa-microphone-lines" id="mainOrbIcon"></i>
+            <span id="mainOrbHint" class="orb-hint-label">TAP TO SPEAK</span>
           </div>
         </div>
+      </div>
 
-        <!-- Chat Conversation Messages -->
-        <div class="chat-container" id="chatContainer">
-          <div class="chat-message assistant-message welcome-msg">
-            <div class="msg-avatar">
-              <div class="avatar-ring"></div>
-              <span>💠</span>
+      <!-- Conversational Dialogue Subtitle HUD -->
+      <div class="dialogue-hud-box" id="dialogueHudBox">
+        <div class="dialogue-header">
+          <span class="dialogue-badge"><i class="fa-solid fa-robot"></i> AAIRA (आएरा)</span>
+          <span class="dialogue-state" id="stageDialogueState">Ready • मास्टर, जो बोलेंगे वो काम हो जाएगा</span>
+        </div>
+        <div class="dialogue-body" id="stageDialogueBody">
+          <p class="dialogue-msg-ai"><strong>प्रणाम मास्टर VIHUHUHU! 🙏</strong></p>
+          <p>मैं आपकी पूरी तरह वॉइस-कमांड पर चलने वाली असिस्टेंट हूँ।</p>
+          <p class="dialogue-tip">🎤 बोलिए: <em>"Gaana bajao"</em>, <em>"Video chalao"</em>, <em>"Snake game banao"</em>, या <em>"Dashboard dikhao"</em>!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Voice Interaction Ribbon -->
+    <footer class="stage-bottom-bar">
+      <!-- Voice Action Chips (Click or Speak) -->
+      <div class="voice-chips-carousel">
+        <button class="voice-cmd-chip" data-cmd="Ek mast Gaana bajao"><i class="fa-solid fa-music"></i> "Gaana Bajao"</button>
+        <button class="voice-cmd-chip" data-cmd="Video chalao"><i class="fa-solid fa-video"></i> "Video Chalao"</button>
+        <button class="voice-cmd-chip" data-cmd="Snake game bana do live khelne ke liye"><i class="fa-solid fa-gamepad"></i> "Snake Game Banao"</button>
+        <button class="voice-cmd-chip" data-cmd="Ek Neon Scientific Calculator bana do"><i class="fa-solid fa-calculator"></i> "Calculator Banao"</button>
+        <button class="voice-cmd-chip" data-cmd="Dashboard aur all features dikhao"><i class="fa-solid fa-gauge-high"></i> "Dashboard Dikhao"</button>
+        <button class="voice-cmd-chip" data-cmd="Screen band karo"><i class="fa-solid fa-eye-slash"></i> "Band Karo"</button>
+      </div>
+
+      <!-- Voice & Text Input Bar -->
+      <div class="stage-input-row">
+        <button id="stageMicBtn" class="stage-mic-btn" title="Speak to AAIRA">
+          <i class="fa-solid fa-microphone"></i>
+        </button>
+        <input type="text" id="stageTextInput" placeholder="Boliye ya type karein (e.g. 'Gaana bajao' ya 'Game banao')..." autocomplete="off">
+        <button id="stageSendBtn" class="stage-send-btn" title="Send">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </footer>
+
+
+    <!-- ========================================================
+         DYNAMIC FLOATING HUD OVERLAYS (HIDDEN UNTIL VOICE COMMANDED!)
+         ======================================================== -->
+
+    <!-- 1. DYNAMIC MUSIC HUD ("Gaana bajao" / "Music chalao") -->
+    <div id="musicOverlayHUD" class="feature-overlay-hud hidden">
+      <div class="hud-window">
+        <div class="hud-window-header">
+          <div class="hud-window-title"><i class="fa-solid fa-music neon-pink"></i> AAIRA CYBER MUSIC PLAYER</div>
+          <button class="hud-close-btn" data-target="musicOverlayHUD"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="hud-window-body">
+          <div class="visualizer-container">
+            <canvas id="musicSpectrumCanvas" width="340" height="130"></canvas>
+            <div class="vinyl-record" id="vinylRecord">
+              <div class="vinyl-center">💠</div>
             </div>
-            <div class="msg-bubble">
-              <div class="msg-header">
-                <span class="sender-name">AAIRA AI (आएरा)</span>
-                <span class="msg-time">Online</span>
-              </div>
-              <div class="msg-text">
-                <p><strong>प्रणाम मास्टर VIHUHUHU! 🙏</strong></p>
-                <p>मैं आपकी सर्वशक्तिमान AI असिस्टेंट <strong>AAIRA</strong> हूँ।</p>
-                <p>✨ <strong>"जो आप बोलेंगे, वो तुरंत बन जाएगा!"</strong> — कोई भी गेम, वेबसाइट, कैलकुलेटर, टूल, या कोड मांगिए, मैं तुरंत पूरा बनाकर यहीं लाइव चलाकर दिखा दूंगी।</p>
-                <p>🎶 साथ ही आप ऊपर से <strong>Music</strong> और <strong>Video</strong> भी चला सकते हैं!</p>
-              </div>
-            </div>
+          </div>
+          <div class="track-details">
+            <div class="track-name" id="currentTrackName">Midnight Lo-Fi Chill Beats</div>
+            <div class="track-artist" id="currentTrackArtist">AAIRA Cyber Lo-Fi Radio</div>
+          </div>
+          <div class="track-progress-wrap">
+            <span class="time-stamp" id="currentTime">0:00</span>
+            <input type="range" id="seekSlider" min="0" max="100" value="0" class="cyber-slider">
+            <span class="time-stamp" id="totalDuration">3:45</span>
+          </div>
+          <div class="audio-controls-row">
+            <button id="audioPrevBtn" class="ctrl-btn"><i class="fa-solid fa-backward-step"></i></button>
+            <button id="audioPlayBtn" class="ctrl-btn-play"><i class="fa-solid fa-play"></i></button>
+            <button id="audioNextBtn" class="ctrl-btn"><i class="fa-solid fa-forward-step"></i></button>
+          </div>
+          <div class="playlist-section">
+            <ul class="playlist-list" id="playlistUl"></ul>
           </div>
         </div>
+      </div>
+    </div>
 
-        <!-- Chat Input Bar -->
-        <div class="chat-input-bar">
-          <div class="voice-status-bar hidden" id="voiceStatusBar">
-            <span class="recording-pulse"></span>
-            <span id="voiceStatusText">Listening to Master Vihuhuhu... (बोलिए)</span>
+    <!-- 2. DYNAMIC VIDEO HUD ("Video chalao") -->
+    <div id="videoOverlayHUD" class="feature-overlay-hud hidden">
+      <div class="hud-window video-hud-window">
+        <div class="hud-window-header">
+          <div class="hud-window-title"><i class="fa-solid fa-video neon-cyan"></i> AAIRA CYBER VIDEO CENTER</div>
+          <button class="hud-close-btn" data-target="videoOverlayHUD"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="hud-window-body">
+          <div class="video-screen-wrap">
+            <video id="dashboardVideo" controls loop playsinline preload="auto" class="video-element" poster="anime-bg.jpg">
+              <source src="demo-video.mp4" type="video/mp4">
+              Your browser does not support video.
+            </video>
+            <iframe id="youtubeVideoFrame" class="youtube-frame hidden" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
           </div>
+          <div class="video-title-row">
+            <span id="currentVideoTitle" class="video-title">Sintel Cinematic Anime Stream (Local)</span>
+            <div class="video-action-btns">
+              <button id="videoPlayDirectBtn" class="btn-mini-play"><i class="fa-solid fa-play"></i> Play</button>
+              <button id="videoFullscreenBtn" class="btn-icon-tiny"><i class="fa-solid fa-expand"></i></button>
+            </div>
+          </div>
+          <div class="video-chip-row">
+            <button class="video-chip active" data-type="direct" data-src="demo-video.mp4" data-title="Sintel Cinematic Anime Stream">🎬 Cinematic (Local)</button>
+            <button class="video-chip" data-type="direct" data-src="https://media.w3.org/2010/05/bunny/trailer.mp4" data-title="Big Animation Film">🐰 Animation Film</button>
+            <button class="video-chip" data-type="youtube" data-src="https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&mute=0" data-title="Lofi Girl 24/7 Live Stream">🎧 Lofi Girl 24/7</button>
+            <button class="video-chip" data-type="youtube" data-src="https://www.youtube.com/embed/4xDzrJKXOOY?autoplay=1&mute=0" data-title="Synthwave Boy 24/7 Radio">🚀 Synthwave 24/7</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-          <div class="input-controls-row">
-            <!-- Mic Voice Button -->
-            <button id="micBtn" class="btn-mic" title="Speak to AAIRA (Voice Command)">
-              <i class="fa-solid fa-microphone"></i>
+    <!-- 3. DYNAMIC LIVE CODE SANDBOX HUD ("Game banao" / "Calculator banao") -->
+    <div id="sandboxOverlayHUD" class="feature-overlay-hud hidden">
+      <div class="hud-window sandbox-hud-window">
+        <div class="hud-window-header">
+          <div class="hud-window-title">
+            <span class="live-dot"></span>
+            <span id="sandboxTitle">Interactive Live Sandbox</span>
+          </div>
+          <div class="hud-header-tools">
+            <button id="sandboxReloadBtn" class="tool-btn" title="Reload"><i class="fa-solid fa-rotate-right"></i></button>
+            <button id="sandboxSaveBtn" class="tool-btn" title="Save to Vault"><i class="fa-regular fa-bookmark"></i></button>
+            <button id="sandboxFullscreenBtn" class="tool-btn" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+            <button class="hud-close-btn" data-target="sandboxOverlayHUD"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+        <div class="hud-window-body sandbox-body-wrap" id="sandboxFrameWrap">
+          <div class="sandbox-empty-placeholder" id="sandboxPlaceholder">
+            <div class="placeholder-icon"><i class="fa-solid fa-code"></i></div>
+            <h3>LIVE SANDBOX RUNNER</h3>
+            <p>AAIRA se koi bhi app, game, calculator ya website banane ko kahein.</p>
+            <button class="btn-cyber-outline" id="demoAppBtn">
+              <i class="fa-solid fa-gamepad"></i> Demo Cyber Tic-Tac-Toe Chalao
             </button>
-
-            <!-- Text Input -->
-            <textarea id="promptInput" rows="1" placeholder="AAIRA se kuch bhi banwayein (e.g. 'Ek Snake Game banao' ya 'Calculator banao')..." autofocus></textarea>
-
-            <!-- Send Button -->
-            <button id="sendBtn" class="btn-send" title="Send to AAIRA">
-              <i class="fa-solid fa-paper-plane"></i>
-            </button>
           </div>
+          <iframe id="sandboxIframe" class="sandbox-iframe hidden" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
         </div>
-      </section>
+      </div>
+    </div>
 
-      <!-- RIGHT: Interactive Multi-Dock (Sandbox / Music / Video / Vault) -->
-      <aside class="media-dock-panel" id="mediaDock">
-
-        <!-- Dock Tabs Header -->
-        <div class="dock-tabs">
-          <button class="dock-tab active" data-dock="sandbox">
-            <i class="fa-solid fa-play"></i> Live Sandbox
-          </button>
-          <button class="dock-tab" data-dock="music">
-            <i class="fa-solid fa-music"></i> Music Player
-          </button>
-          <button class="dock-tab" data-dock="video">
-            <i class="fa-solid fa-video"></i> Video Center
-          </button>
-          <button class="dock-tab" data-dock="vault">
-            <i class="fa-solid fa-box-archive"></i> Vault (<span id="vaultCount">0</span>)
-          </button>
+    <!-- 4. DYNAMIC FULL DASHBOARD HUD ("Dashboard dikhao" / "All features dikhao") -->
+    <div id="dashboardOverlayHUD" class="feature-overlay-hud hidden">
+      <div class="hud-window full-dashboard-window">
+        <div class="hud-window-header">
+          <div class="hud-window-title"><i class="fa-solid fa-gauge-high neon-cyan"></i> AAIRA FULL MULTI-DOCK DASHBOARD</div>
+          <button class="hud-close-btn" data-target="dashboardOverlayHUD"><i class="fa-solid fa-xmark"></i></button>
         </div>
-
-        <!-- 1. LIVE INTERACTIVE SANDBOX RUNNER -->
-        <div class="dock-view active" id="dockViewSandbox">
-          <div class="sandbox-toolbar">
-            <div class="sandbox-title-wrap">
-              <span class="live-dot"></span>
-              <span id="sandboxTitle" class="sandbox-title">Interactive Live Sandbox</span>
+        <div class="hud-window-body dashboard-grid-body">
+          <!-- Left: Chat Studio -->
+          <div class="dash-chat-column">
+            <div class="dash-chat-header">
+              <i class="fa-solid fa-terminal"></i> AI Studio Output & Code Logs
             </div>
-            <div class="sandbox-actions">
-              <button id="sandboxReloadBtn" class="tool-btn" title="Reload App"><i class="fa-solid fa-rotate-right"></i></button>
-              <button id="sandboxSaveBtn" class="tool-btn" title="Save to Vault"><i class="fa-regular fa-bookmark"></i></button>
-              <button id="sandboxFullscreenBtn" class="tool-btn" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+            <div class="dash-chat-messages" id="dashChatContainer">
+              <!-- Logs and conversation -->
             </div>
           </div>
-          <div class="sandbox-frame-wrap" id="sandboxFrameWrap">
-            <div class="sandbox-empty-placeholder" id="sandboxPlaceholder">
-              <div class="placeholder-icon"><i class="fa-solid fa-code"></i></div>
-              <h3>LIVE SANDBOX RUNNER</h3>
-              <p>AAIRA se koi bhi app, game, calculator ya website banane ko kahein.</p>
-              <p class="placeholder-tip">Jaise hi AAIRA code banayegi, aap <strong>[▶️ Live Run]</strong> pe click karke yahan turant chala sakte hain!</p>
-              <button class="btn-cyber-outline" id="demoAppBtn">
-                <i class="fa-solid fa-gamepad"></i> Load Demo Cyber Tic-Tac-Toe
-              </button>
-            </div>
-            <iframe id="sandboxIframe" class="sandbox-iframe hidden" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
-          </div>
-        </div>
-
-        <!-- 2. BUILT-IN MUSIC PLAYER ("musci chalne ka bhi kar dena") -->
-        <div class="dock-view" id="dockViewMusic">
-          <div class="music-player-card">
-            <!-- Vinyl / Spectrum Visualizer -->
-            <div class="visualizer-container">
-              <canvas id="musicSpectrumCanvas" width="340" height="150"></canvas>
-              <div class="vinyl-record" id="vinylRecord">
-                <div class="vinyl-center">💠</div>
-              </div>
-            </div>
-
-            <!-- Current Track Info -->
-            <div class="track-details">
-              <div class="track-name" id="currentTrackName">Midnight Lo-Fi Chill Beats</div>
-              <div class="track-artist" id="currentTrackArtist">AAIRA Cyber Lo-Fi Radio</div>
-            </div>
-
-            <!-- Progress Bar -->
-            <div class="track-progress-wrap">
-              <span class="time-stamp" id="currentTime">0:00</span>
-              <input type="range" id="seekSlider" min="0" max="100" value="0" class="cyber-slider">
-              <span class="time-stamp" id="totalDuration">3:45</span>
-            </div>
-
-            <!-- Player Controls -->
-            <div class="audio-controls-row">
-              <button id="audioPrevBtn" class="ctrl-btn" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
-              <button id="audioPlayBtn" class="ctrl-btn-play" title="Play/Pause"><i class="fa-solid fa-play"></i></button>
-              <button id="audioNextBtn" class="ctrl-btn" title="Next"><i class="fa-solid fa-forward-step"></i></button>
-            </div>
-
-            <!-- Volume Slider -->
-            <div class="volume-slider-row">
-              <i class="fa-solid fa-volume-low"></i>
-              <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.75" class="cyber-slider-mini">
-              <i class="fa-solid fa-volume-high"></i>
-            </div>
-
-            <!-- Playlist Selector -->
-            <div class="playlist-section">
-              <div class="playlist-header">
-                <span><i class="fa-solid fa-list-ul"></i> BUILT-IN PLAYLIST</span>
-              </div>
-              <ul class="playlist-list" id="playlistUl">
-                <!-- Dynamically Populated -->
-              </ul>
-            </div>
-
-            <!-- Custom Audio Link -->
-            <div class="custom-media-input">
-              <label><i class="fa-solid fa-link"></i> Custom MP3 / Audio Link:</label>
-              <div class="input-inline">
-                <input type="url" id="customAudioUrl" placeholder="https://example.com/audio.mp3">
-                <button id="loadCustomAudioBtn" class="btn-mini"><i class="fa-solid fa-play"></i> Play</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. BUILT-IN VIDEO PLAYER ("vahi dashbord pe chale uska video bhi") -->
-        <div class="dock-view" id="dockViewVideo">
-          <div class="video-player-card">
-            <div class="video-screen-wrap">
-              <!-- Guaranteed Working Local MP4 Video with controls and loop -->
-              <video id="dashboardVideo" controls loop playsinline preload="auto" class="video-element" poster="anime-bg.jpg">
-                <source src="demo-video.mp4" type="video/mp4">
-                Your browser does not support video.
-              </video>
-              <iframe id="youtubeVideoFrame" class="youtube-frame hidden" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
-
-            <div class="video-title-row">
-              <span id="currentVideoTitle" class="video-title">Sintel Cinematic Anime Stream</span>
-              <div class="video-action-btns">
-                <button id="videoPlayDirectBtn" class="btn-mini-play" title="Play / Resume Video"><i class="fa-solid fa-play"></i> Play</button>
-                <button id="videoFullscreenBtn" class="btn-icon-tiny" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
-              </div>
-            </div>
-
-            <!-- Video Presets Ribbon -->
-            <div class="video-presets-wrap">
-              <div class="presets-label"><i class="fa-solid fa-clapperboard"></i> 100% WORKING VIDEO STREAMS:</div>
-              <div class="video-chip-row">
-                <button class="video-chip active" data-type="direct" data-src="demo-video.mp4" data-title="Sintel Cinematic Anime Stream">🎬 Cinematic Stream (Local)</button>
-                <button class="video-chip" data-type="direct" data-src="https://media.w3.org/2010/05/bunny/trailer.mp4" data-title="Big Animation Film">🐰 Animation Film</button>
-                <button class="video-chip" data-type="youtube" data-src="https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&mute=0" data-title="Lofi Girl 24/7 Live Stream">🎧 Lofi Girl 24/7</button>
-                <button class="video-chip" data-type="youtube" data-src="https://www.youtube.com/embed/4xDzrJKXOOY?autoplay=1&mute=0" data-title="Synthwave Boy 24/7 Radio">🚀 Synthwave 24/7</button>
-              </div>
-            </div>
-
-            <!-- Custom Video URL Input -->
-            <div class="custom-media-input">
-              <label><i class="fa-brands fa-youtube"></i> Custom Video URL (YouTube ya Direct MP4 Link):</label>
-              <div class="input-inline">
-                <input type="url" id="customVideoUrl" placeholder="https://youtube.com/watch?v=... ya .mp4 link">
-                <button id="loadCustomVideoBtn" class="btn-mini"><i class="fa-solid fa-play"></i> Play Video</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. SAVED CREATIONS VAULT -->
-        <div class="dock-view" id="dockViewVault">
-          <div class="vault-container">
-            <div class="vault-header">
-              <h3><i class="fa-solid fa-box-archive"></i> AAIRA CREATIONS VAULT</h3>
-              <p>Turso Cloud Database me saved aapke apps aur games</p>
+          <!-- Right: Saved Vault & Quick Access -->
+          <div class="dash-vault-column">
+            <div class="dash-vault-header">
+              <i class="fa-solid fa-box-archive"></i> Saved Creations Vault (<span id="vaultCount">0</span>)
             </div>
             <div class="vault-list" id="vaultList">
-              <div class="vault-empty">Abhi koi creation saved nahi hai. AAIRA se kuch banwayein aur save karein!</div>
+              <!-- Dynamically populated -->
             </div>
           </div>
         </div>
-
-      </aside>
-
+      </div>
     </div>
+
   </div>
 
   <!-- Audio Element for Music -->
   <audio id="mainAudioPlayer" crossorigin="anonymous"></audio>
 
-  <!-- JS Scripts -->
+  <!-- Main JavaScript Controller -->
   <script src="app.js"></script>
 </body>
 </html>
