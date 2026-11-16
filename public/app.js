@@ -20,8 +20,15 @@
     currentTrackIndex: 0,
     isPlayingAudio: false,
     audioInitialized: false,
-    bestVoice: null
+    bestVoice: null,
+    voiceProfileIndex: 0
   };
+
+  const VOICE_PROFILES = [
+    { label: '🌸 Sweet Hindi AI', lang: 'hi', pitch: 1.18, rate: 0.94 },
+    { label: '💎 Neural Companion', lang: 'en', pitch: 1.06, rate: 1.0 },
+    { label: '✨ Cyber Anime AI', lang: 'hi', pitch: 1.25, rate: 1.02 }
+  ];
 
   // Curated Royalty-Free Music Playlist
   const PLAYLIST = [
@@ -71,10 +78,11 @@
     aiVoiceStage: document.getElementById('aiVoiceStage'),
     stageTtsToggle: document.getElementById('stageTtsToggle'),
     stageLockBtn: document.getElementById('stageLockBtn'),
+    voiceProfileBtn: document.getElementById('voiceProfileBtn'),
+    voiceProfileLabel: document.getElementById('voiceProfileLabel'),
     mainAIOralCanvas: document.getElementById('mainAIOralCanvas'),
     mainOrbBtn: document.getElementById('mainOrbBtn'),
-    mainOrbIcon: document.getElementById('mainOrbIcon'),
-    mainOrbHint: document.getElementById('mainOrbHint'),
+    aiCoreNucleus: document.getElementById('aiCoreNucleus'),
     stageDialogueState: document.getElementById('stageDialogueState'),
     stageDialogueBody: document.getElementById('stageDialogueBody'),
     stageMicBtn: document.getElementById('stageMicBtn'),
@@ -543,25 +551,46 @@
   }
 
   // ========================================================
-  // 5. SUPERIOR NATURAL FEMALE VOICE TTS
+  // 5. SUPERIOR NATURAL FEMALE VOICE TTS & PROFILES
   // ========================================================
   function loadBestVoice() {
     if (!window.speechSynthesis) return;
     const voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) return;
 
-    state.bestVoice = 
-      voices.find(v => v.lang.startsWith('hi') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Online'))) ||
-      voices.find(v => v.lang.startsWith('hi')) ||
-      voices.find(v => v.lang.includes('IN') && (v.name.includes('Google') || v.name.includes('Female') || v.name.includes('Natural'))) ||
-      voices.find(v => v.lang.includes('IN')) ||
-      voices.find(v => v.name.includes('Google UK English Female') || v.name.includes('Samantha') || v.name.includes('Zira')) ||
-      voices[0];
+    const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
+    let matched = null;
+
+    if (profile.lang === 'hi') {
+      matched =
+        voices.find(v => v.lang.startsWith('hi') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Online') || v.name.includes('Swara') || v.name.includes('Heera'))) ||
+        voices.find(v => v.lang.startsWith('hi')) ||
+        voices.find(v => v.lang.includes('IN') && (v.name.includes('Female') || v.name.includes('Natural') || v.name.includes('Google'))) ||
+        voices.find(v => v.lang.includes('IN'));
+    } else {
+      matched =
+        voices.find(v => (v.name.includes('Natural') || v.name.includes('Online') || v.name.includes('Google') || v.name.includes('Neural')) && (v.lang.startsWith('en') || v.lang.includes('IN'))) ||
+        voices.find(v => v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Zira') || v.name.includes('Female')) ||
+        voices.find(v => v.lang.startsWith('en'));
+    }
+
+    state.bestVoice = matched || voices.find(v => v.lang.startsWith('hi')) || voices[0];
   }
 
   if (window.speechSynthesis) {
     window.speechSynthesis.onvoiceschanged = loadBestVoice;
     loadBestVoice();
+  }
+
+  function cycleVoiceProfile() {
+    state.voiceProfileIndex = (state.voiceProfileIndex + 1) % VOICE_PROFILES.length;
+    const current = VOICE_PROFILES[state.voiceProfileIndex];
+    if (DOM.voiceProfileLabel) {
+      DOM.voiceProfileLabel.textContent = `Voice: ${current.label}`;
+    }
+    loadBestVoice();
+    playTone(920, 0.12, 'sine', 0.2);
+    speakText(`जी मास्टर विहुहुहु, मैंने आवाज़ बदल दी है। अब यह ${current.label} मोड है।`);
   }
 
   function speakText(rawText, onDone = null) {
@@ -586,22 +615,21 @@
 
       if (!clean) clean = "जी मास्टर विहुहुहु, मैंने काम कर दिया है!";
 
+      const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
       const utterance = new SpeechSynthesisUtterance(clean);
       if (state.bestVoice) utterance.voice = state.bestVoice;
-      utterance.rate = 0.98;
-      utterance.pitch = 1.12;
+      utterance.rate = profile.rate || 0.96;
+      utterance.pitch = profile.pitch || 1.15;
 
       utterance.onstart = () => {
         state.isSpeaking = true;
         DOM.mainOrbBtn.classList.add('speaking');
-        DOM.mainOrbHint.textContent = 'SPEAKING...';
         DOM.stageDialogueState.textContent = 'Speaking... (बोल रही हूँ)';
       };
 
       utterance.onend = () => {
         state.isSpeaking = false;
         DOM.mainOrbBtn.classList.remove('speaking');
-        DOM.mainOrbHint.textContent = 'TAP TO SPEAK';
         DOM.stageDialogueState.textContent = 'Ready • मास्टर, जो बोलेंगे वो काम होगा';
 
         if (onDone) onDone();
@@ -619,7 +647,6 @@
       utterance.onerror = () => {
         state.isSpeaking = false;
         DOM.mainOrbBtn.classList.remove('speaking');
-        DOM.mainOrbHint.textContent = 'TAP TO SPEAK';
         if (onDone) onDone();
       };
 
@@ -650,7 +677,6 @@
       state.isListening = true;
       DOM.mainOrbBtn.classList.add('listening');
       DOM.stageMicBtn.classList.add('listening');
-      DOM.mainOrbHint.textContent = 'LISTENING...';
       DOM.stageDialogueState.textContent = 'Listening to Master Vihuhuhu... (सुन रही हूँ)';
       playTone(880, 0.08);
     };
@@ -681,7 +707,6 @@
     state.isListening = false;
     DOM.mainOrbBtn.classList.remove('listening');
     DOM.stageMicBtn.classList.remove('listening');
-    DOM.mainOrbHint.textContent = 'TAP TO SPEAK';
     DOM.stageDialogueState.textContent = 'Ready • मास्टर, बोलिए...';
   }
 
@@ -753,7 +778,17 @@
       return;
     }
 
-    // Command 5: BUILD APPS / GAMES / OMNIPOTENT CODE GENERATION ("Game banao" / "Calculator banao")
+    // Command 5: VOICE CHANGE COMMAND ("Voice badlo" / "Aawaz badlo")
+    if (
+      lower.includes('voice badlo') || lower.includes('aawaz badlo') || lower.includes('awaaz badlo') ||
+      lower.includes('awaj badlo') || lower.includes('voice change') || lower.includes('change voice') ||
+      lower.includes('aawaz change') || lower.includes('awaaz change') || lower.includes('आवाज बदलो')
+    ) {
+      cycleVoiceProfile();
+      return;
+    }
+
+    // Command 6: BUILD APPS / GAMES / OMNIPOTENT CODE GENERATION ("Game banao" / "Calculator banao")
     handleOmnipotentCodeRequest(text);
   }
 
@@ -1287,6 +1322,9 @@
 
     // Stage Top Actions
     DOM.stageLockBtn.addEventListener('click', lockSystem);
+    if (DOM.voiceProfileBtn) {
+      DOM.voiceProfileBtn.addEventListener('click', cycleVoiceProfile);
+    }
     DOM.stageTtsToggle.addEventListener('click', () => {
       state.ttsEnabled = !state.ttsEnabled;
       DOM.stageTtsToggle.classList.toggle('active', state.ttsEnabled);

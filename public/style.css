@@ -568,39 +568,114 @@ html, body {
   to { transform: scale(1.15); box-shadow: 0 0 60px var(--emerald-neon); }
 }
 
-.orb-pulsing-rings {
+/* Living Holographic AI Core Styles (No mic icon or tap text!) */
+.ai-core-gyro-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(0, 240, 255, 0.6);
+  animation: rotateClockwise 12s linear infinite;
+  pointer-events: none;
+}
+
+.ai-core-energy-iris {
   position: absolute;
   inset: 10px;
   border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.55);
-  animation: rotateClockwise 10s linear infinite;
+  border: 1.5px solid rgba(255, 0, 127, 0.4);
+  box-shadow: inset 0 0 15px rgba(255, 0, 127, 0.3);
+  animation: rotateCounterClockwise 8s linear infinite;
+  pointer-events: none;
 }
 
-@keyframes rotateClockwise {
+@keyframes rotateCounterClockwise {
   from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  to { transform: rotate(-360deg); }
 }
 
-.orb-icon-center {
+.ai-core-nucleus {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, var(--cyan-neon) 40%, rgba(13, 20, 38, 0.9) 85%);
+  box-shadow: 0 0 35px var(--cyan-neon), inset 0 0 20px #ffffff;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
-  text-shadow: 0 0 10px var(--cyan-neon);
+  transition: var(--transition-smooth);
 }
 
-.orb-icon-center i {
-  font-size: 32px;
-  margin-bottom: 4px;
+.ai-quantum-gem {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #ffffff 0%, var(--cyan-neon) 50%, var(--pink-neon) 100%);
+  transform: rotate(45deg);
+  border-radius: 4px;
+  box-shadow: 0 0 20px #ffffff;
+  animation: pulseGem 2.5s infinite ease-in-out;
 }
 
-.orb-hint-label {
-  font-family: var(--font-cyber);
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  font-weight: 700;
-  color: var(--cyan-neon);
+@keyframes pulseGem {
+  0%, 100% { transform: rotate(45deg) scale(0.9); box-shadow: 0 0 15px #00f0ff; }
+  50% { transform: rotate(225deg) scale(1.15); box-shadow: 0 0 30px #ffffff; }
+}
+
+.ai-holo-pulse {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--cyan-neon);
+  opacity: 0.6;
+  animation: energyPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes energyPing {
+  75%, 100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+/* Audio Wave Ripples around the Core */
+.ai-wave-ripples {
+  position: absolute;
+  inset: -25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.ai-wave-ripples span {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--cyan-neon);
+  opacity: 0;
+}
+
+.main-orb-touch-target.speaking .ai-core-nucleus {
+  background: radial-gradient(circle, #ffffff 0%, var(--pink-neon) 45%, rgba(13, 20, 38, 0.9) 85%);
+  box-shadow: 0 0 45px var(--pink-neon), inset 0 0 25px #ffffff;
+}
+
+.main-orb-touch-target.listening .ai-core-nucleus {
+  background: radial-gradient(circle, #ffffff 0%, var(--emerald-neon) 45%, rgba(13, 20, 38, 0.9) 85%);
+  box-shadow: 0 0 45px var(--emerald-neon), inset 0 0 25px #ffffff;
+}
+
+.main-orb-touch-target.speaking .ai-wave-ripples span,
+.main-orb-touch-target.listening .ai-wave-ripples span {
+  animation: rippleSpread 1.6s infinite ease-out;
+}
+.main-orb-touch-target .ai-wave-ripples span:nth-child(1) { width: 140px; height: 140px; animation-delay: 0s; }
+.main-orb-touch-target .ai-wave-ripples span:nth-child(2) { width: 160px; height: 160px; animation-delay: 0.4s; }
+.main-orb-touch-target .ai-wave-ripples span:nth-child(3) { width: 180px; height: 180px; animation-delay: 0.8s; }
+.main-orb-touch-target .ai-wave-ripples span:nth-child(4) { width: 200px; height: 200px; animation-delay: 1.2s; }
+
+@keyframes rippleSpread {
+  0% { transform: scale(0.7); opacity: 0.8; }
+  100% { transform: scale(1.4); opacity: 0; }
 }
 
 /* Dialogue Subtitle HUD */

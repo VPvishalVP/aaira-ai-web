@@ -110,6 +110,11 @@
       </div>
 
       <div class="stage-hud-actions">
+        <!-- Voice Profile Selector -->
+        <button id="voiceProfileBtn" class="hud-pill-btn" title="Change AI Voice">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="voiceProfileLabel">Voice: Sweet Hindi</span>
+        </button>
+
         <!-- Voice TTS Toggle -->
         <button id="stageTtsToggle" class="hud-pill-btn active" title="Toggle Voice Response">
           <i class="fa-solid fa-volume-high"></i> <span class="hide-mobile">VOICE ON</span>
@@ -126,11 +131,16 @@
     <div class="stage-center-area">
       <div class="main-orb-wrapper">
         <canvas id="mainAIOralCanvas" width="420" height="420"></canvas>
-        <div class="main-orb-touch-target" id="mainOrbBtn" title="Click to Speak / Stop">
-          <div class="orb-pulsing-rings"></div>
-          <div class="orb-icon-center">
-            <i class="fa-solid fa-microphone-lines" id="mainOrbIcon"></i>
-            <span id="mainOrbHint" class="orb-hint-label">TAP TO SPEAK</span>
+        <div class="main-orb-touch-target" id="mainOrbBtn" title="AAIRA Quantum Core">
+          <!-- Living Holographic AI Core (No keyboard mic or tap text!) -->
+          <div class="ai-core-gyro-ring"></div>
+          <div class="ai-core-energy-iris"></div>
+          <div class="ai-core-nucleus" id="aiCoreNucleus">
+            <div class="ai-quantum-gem"></div>
+            <div class="ai-holo-pulse"></div>
+          </div>
+          <div class="ai-wave-ripples" id="aiWaveRipples">
+            <span></span><span></span><span></span><span></span>
           </div>
         </div>
       </div>
