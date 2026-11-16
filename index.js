@@ -306,6 +306,43 @@ app.post('/api/creations', async (req, res) => {
   }
 });
 
+// ==================== HIGH-QUALITY STUDIO NEURAL TTS ====================
+// Pure studio-quality neural voice stream, NOT keyboard TTS!
+const https = require('https');
+
+app.get('/api/tts', (req, res) => {
+  try {
+    const text = (req.query.text || '').toString().slice(0, 300).trim();
+    const lang = (req.query.lang || 'hi').toString();
+    if (!text) {
+      return res.status(400).send('Text required');
+    }
+
+    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${encodeURIComponent(lang)}&client=tw-ob`;
+
+    const request = https.get(ttsUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://translate.google.com/'
+      }
+    }, (ttsRes) => {
+      if (ttsRes.statusCode !== 200) {
+        return res.status(ttsRes.statusCode).end();
+      }
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      ttsRes.pipe(res);
+    });
+
+    request.on('error', (err) => {
+      console.warn('[TTS Error]', err.message);
+      res.status(500).end();
+    });
+  } catch (err) {
+    res.status(500).end();
+  }
+});
+
 // ==================== HEALTHCHECK ====================
 
 app.get('/api/health', (req, res) => {

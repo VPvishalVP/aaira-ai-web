@@ -13,6 +13,8 @@
     ttsEnabled: true,
     isListening: false,
     isSpeaking: false,
+    is24x7Active: true,
+    currentAudioTTS: null,
     chatHistory: [],
     currentCreationCode: null,
     currentCreationTitle: 'Interactive App',
@@ -73,6 +75,12 @@
     authDigit1: document.getElementById('authDigit1'),
     authDigit2: document.getElementById('authDigit2'),
     authVoiceHintText: document.getElementById('authVoiceHintText'),
+
+    // YouTube Direct Floating Stage (On Top of AUI)
+    youtubeDirectOverlay: document.getElementById('youtubeDirectOverlay'),
+    directYoutubePlayer: document.getElementById('directYoutubePlayer'),
+    youtubeOverlayTitle: document.getElementById('youtubeOverlayTitle'),
+    closeYoutubeOverlayBtn: document.getElementById('closeYoutubeOverlayBtn'),
 
     // Dialogue Subtitle HUD
     stageDialogueState: document.getElementById('stageDialogueState'),
@@ -515,15 +523,70 @@
     speakText(`जी मास्टर विहुहुहु, मैंने आवाज़ बदल दी है। अब यह ${current.label} मोड है।`);
   }
 
+  // ========================================================
+  // 5. STUDIO QUALITY NEURAL AUDIO TTS & VOICE PROFILES
+  // (Pure Studio Neural Voice, NOT robotic keyboard reader!)
+  // ========================================================
+  function loadBestVoice() {
+    if (!window.speechSynthesis) return;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return;
+
+    const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
+    let matched = null;
+
+    if (profile.lang === 'hi') {
+      matched =
+        voices.find(v => v.lang.startsWith('hi') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Online') || v.name.includes('Swara') || v.name.includes('Heera'))) ||
+        voices.find(v => v.lang.startsWith('hi')) ||
+        voices.find(v => v.lang.includes('IN') && (v.name.includes('Female') || v.name.includes('Natural') || v.name.includes('Google'))) ||
+        voices.find(v => v.lang.includes('IN'));
+    } else {
+      matched =
+        voices.find(v => (v.name.includes('Natural') || v.name.includes('Online') || v.name.includes('Google') || v.name.includes('Neural')) && (v.lang.startsWith('en') || v.lang.includes('IN'))) ||
+        voices.find(v => v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Zira') || v.name.includes('Female')) ||
+        voices.find(v => v.lang.startsWith('en'));
+    }
+
+    state.bestVoice = matched || voices.find(v => v.lang.startsWith('hi')) || voices[0];
+  }
+
+  if (window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = loadBestVoice;
+    loadBestVoice();
+  }
+
+  function cycleVoiceProfile() {
+    state.voiceProfileIndex = (state.voiceProfileIndex + 1) % VOICE_PROFILES.length;
+    const current = VOICE_PROFILES[state.voiceProfileIndex];
+    if (DOM.voiceProfileLabel) {
+      DOM.voiceProfileLabel.textContent = `Voice: ${current.label}`;
+    }
+    loadBestVoice();
+    playTone(920, 0.12, 'sine', 0.2);
+    speakText(`जी मास्टर विहुहुहु, मैंने आवाज़ बदल दी है। अब यह ${current.label} मोड है।`);
+  }
+
   function speakText(rawText, onDone = null) {
-    if (!state.ttsEnabled || !window.speechSynthesis) {
+    if (!state.ttsEnabled) {
       if (onDone) onDone();
       return;
     }
 
-    try {
-      window.speechSynthesis.cancel();
+    // Stop any currently playing audio TTS
+    if (state.currentAudioTTS) {
+      try {
+        state.currentAudioTTS.pause();
+        state.currentAudioTTS.src = '';
+      } catch(_) {}
+      state.currentAudioTTS = null;
+    }
 
+    if (window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch(_) {}
+    }
+
+    try {
       let clean = rawText
         .replace(/```[\s\S]*?```/g, 'मैंने इसका पूरा कोड तैयार कर दिया है। आप इसे लाइव चला सकते हैं।')
         .replace(/`([^`]+)`/g, '$1')
@@ -537,49 +600,74 @@
 
       if (!clean) clean = "जी मास्टर विहुहुहु, मैंने काम कर दिया है!";
 
-      const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
-      const utterance = new SpeechSynthesisUtterance(clean);
-      if (state.bestVoice) utterance.voice = state.bestVoice;
-      utterance.rate = profile.rate || 0.96;
-      utterance.pitch = profile.pitch || 1.15;
+      state.isSpeaking = true;
+      DOM.mainOrbBtn.classList.add('speaking');
+      DOM.stageDialogueState.textContent = 'Speaking... (बोल रही हूँ)';
 
-      utterance.onstart = () => {
-        state.isSpeaking = true;
-        DOM.mainOrbBtn.classList.add('speaking');
-        DOM.stageDialogueState.textContent = 'Speaking... (बोल रही हूँ)';
-      };
+      // Pause mic while speaking so AI does not hear her own voice
+      if (speechRecognizer) {
+        try { speechRecognizer.stop(); } catch(_) {}
+      }
 
-      utterance.onend = () => {
+      const onFinish = () => {
         state.isSpeaking = false;
         DOM.mainOrbBtn.classList.remove('speaking');
-        DOM.stageDialogueState.textContent = 'Ready • मास्टर, जो बोलेंगे वो काम होगा';
+        DOM.stageDialogueState.textContent = '🟢 24/7 Mic Active • मास्टर, जो बोलेंगे वो काम होगा';
 
         if (onDone) onDone();
 
-        // Continuous Voice: auto open mic after AAIRA speaks
-        if (state.unlocked) {
+        // 24/7 Continuous Hands-Free Listening: immediately resume mic
+        if (state.unlocked && state.is24x7Active) {
           setTimeout(() => {
-            if (!state.isSpeaking && !state.isListening) {
-              startListening();
-            }
-          }, 350);
+            if (!state.isSpeaking) startListening();
+          }, 200);
         }
       };
 
-      utterance.onerror = () => {
-        state.isSpeaking = false;
-        DOM.mainOrbBtn.classList.remove('speaking');
-        if (onDone) onDone();
+      // 1. Studio-Quality Neural Audio Stream from /api/tts (Crystal clear sweet female tone)
+      const audioUrl = `/api/tts?text=${encodeURIComponent(clean)}&lang=hi`;
+      const audio = new Audio(audioUrl);
+      state.currentAudioTTS = audio;
+
+      audio.onended = onFinish;
+      audio.onerror = () => {
+        fallbackWebSpeech(clean, onFinish);
       };
 
-      window.speechSynthesis.speak(utterance);
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          fallbackWebSpeech(clean, onFinish);
+        });
+      }
     } catch (_) {
-      if (onDone) onDone();
+      fallbackWebSpeech(rawText, onDone);
+    }
+  }
+
+  function fallbackWebSpeech(cleanText, onFinish) {
+    if (!window.speechSynthesis) {
+      if (onFinish) onFinish();
+      return;
+    }
+    try {
+      const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      if (state.bestVoice) utterance.voice = state.bestVoice;
+      utterance.rate = profile.rate || 0.95;
+      utterance.pitch = profile.pitch || 1.08;
+
+      utterance.onend = onFinish;
+      utterance.onerror = onFinish;
+
+      window.speechSynthesis.speak(utterance);
+    } catch(_) {
+      if (onFinish) onFinish();
     }
   }
 
   // ========================================================
-  // 6. SPEECH RECOGNITION (MIC & VOICE COMMAND DISPATCHER)
+  // 6. 24/7 HANDS-FREE AMBIENT SPEECH RECOGNITION (NO KEYBOARD MIC)
   // ========================================================
   let speechRecognizer = null;
 
@@ -591,7 +679,7 @@
     }
 
     speechRecognizer = new SpeechRec();
-    speechRecognizer.continuous = false;
+    speechRecognizer.continuous = true; // 24/7 continuous ambient listening!
     speechRecognizer.interimResults = false;
     speechRecognizer.lang = 'hi-IN';
 
@@ -599,12 +687,17 @@
       state.isListening = true;
       DOM.mainOrbBtn.classList.add('listening');
       DOM.stageMicBtn.classList.add('listening');
-      DOM.stageDialogueState.textContent = 'Listening to Master Vihuhuhu... (सुन रही हूँ)';
+      DOM.stageDialogueState.textContent = '🟢 24/7 Listening to Master Vihuhuhu... (सुन रही हूँ)';
       playTone(880, 0.08);
     };
 
     speechRecognizer.onresult = (event) => {
-      const transcript = event.results[0][0].transcript.trim();
+      const results = event.results;
+      const last = results[results.length - 1];
+      if (!last || !last[0]) return;
+      const transcript = last[0].transcript.trim();
+      if (!transcript) return;
+
       DOM.stageTextInput.value = transcript;
 
       if (!state.unlocked) {
@@ -621,8 +714,26 @@
       }
     };
 
-    speechRecognizer.onerror = () => stopListening();
-    speechRecognizer.onend = () => stopListening();
+    speechRecognizer.onerror = (err) => {
+      // Quietly auto-restart on silent pause/timeout in 24/7 mode
+      if (state.unlocked && state.is24x7Active && !state.isSpeaking) {
+        setTimeout(() => {
+          try { speechRecognizer.start(); } catch(_) {}
+        }, 300);
+      }
+    };
+
+    speechRecognizer.onend = () => {
+      state.isListening = false;
+      DOM.mainOrbBtn.classList.remove('listening');
+      DOM.stageMicBtn.classList.remove('listening');
+      // 24/7 Ambient Auto-Restart!
+      if (state.unlocked && state.is24x7Active && !state.isSpeaking) {
+        setTimeout(() => {
+          try { speechRecognizer.start(); } catch(_) {}
+        }, 200);
+      }
+    };
   }
 
   function startListening() {
@@ -630,6 +741,9 @@
     if (!speechRecognizer) return;
 
     try {
+      if (state.currentAudioTTS) {
+        state.currentAudioTTS.pause();
+      }
       if (window.speechSynthesis && window.speechSynthesis.speaking) {
         window.speechSynthesis.cancel();
       }
@@ -641,7 +755,7 @@
     state.isListening = false;
     DOM.mainOrbBtn.classList.remove('listening');
     DOM.stageMicBtn.classList.remove('listening');
-    DOM.stageDialogueState.textContent = 'Ready • मास्टर, बोलिए...';
+    DOM.stageDialogueState.textContent = 'Mic Idle • मास्टर, बोलिए...';
   }
 
   function toggleListening() {
@@ -653,70 +767,100 @@
   }
 
   // ========================================================
+  // YOUTUBE DIRECT ON TOP OF AUI ("aui ke upper youtube direct")
+  // ========================================================
+  function playDirectYouTube(queryOrUrl, title = 'YouTube Direct Stream') {
+    closeAllHUDs();
+    if (DOM.youtubeOverlayTitle) DOM.youtubeOverlayTitle.textContent = title;
+
+    let embedSrc = '';
+    const clean = (queryOrUrl || '').trim();
+    if (clean.includes('youtube.com') || clean.includes('youtu.be')) {
+      embedSrc = clean.replace('watch?v=', 'embed/').split('&')[0] + '?autoplay=1&enablejsapi=1';
+    } else {
+      const query = encodeURIComponent(clean || 'hindi lofi songs');
+      embedSrc = `https://www.youtube.com/embed?listType=search&list=${query}&autoplay=1&enablejsapi=1`;
+    }
+
+    if (DOM.directYoutubePlayer) {
+      DOM.directYoutubePlayer.src = embedSrc;
+    }
+    if (DOM.youtubeDirectOverlay) {
+      DOM.youtubeDirectOverlay.classList.remove('hidden');
+    }
+  }
+
+  function stopDirectYouTube() {
+    if (DOM.directYoutubePlayer) {
+      DOM.directYoutubePlayer.src = '';
+    }
+    if (DOM.youtubeDirectOverlay) {
+      DOM.youtubeDirectOverlay.classList.add('hidden');
+    }
+  }
+
+  // ========================================================
   // 7. VOICE COMMAND ENGINE ("ai all kam vaice command pe kare")
   // ========================================================
   function dispatchVoiceCommand(text) {
     const lower = text.toLowerCase().trim();
     DOM.stageTextInput.value = '';
 
-    // Command 1: MUSIC COMMAND ("Gaana bajao" / "Music chalao")
+    // Command 1: STOP / CLOSE COMMAND ("Band karo" / "Roko" / "Stop" / "Hatao")
+    if (
+      lower.includes('band karo') || lower.includes('chhupao') || lower.includes('close') ||
+      lower.includes('hide') || lower.includes('hatao') || lower.includes('screen saaf') ||
+      lower.includes('roko') || lower.includes('stop') || lower.includes('pause') ||
+      lower.includes('बंद करो') || lower.includes('रोको') || lower.includes('बंद')
+    ) {
+      stopDirectYouTube();
+      toggleAudioPlay(false);
+      if (DOM.dashboardVideo) DOM.dashboardVideo.pause();
+      closeAllHUDs();
+      updateDialogue(text, 'जी मास्टर, यूट्यूब और सभी फीचर्स बंद कर दिए हैं। स्क्रीन साफ़ है। ✨');
+      speakText('जी मास्टर, यूट्यूब और सब बंद कर दिया है।');
+      return;
+    }
+
+    // Command 2: YOUTUBE MUSIC / SONG ("Gaana bajao" / "Song chalao" / "Music chalao")
     if (
       lower.includes('gaana') || lower.includes('music') || lower.includes('song') ||
       lower.includes('गाना') || lower.includes('गीत') || lower.includes('lofi')
     ) {
-      if (lower.includes('next') || lower.includes('agla') || lower.includes('badlo') || lower.includes('change')) {
-        playNextTrack();
-        updateDialogue(text, 'जी मास्टर, अगला गाना चला दिया है। 🎶');
-        speakText('जी मास्टर, अगला गाना चला दिया है।');
-      } else if (lower.includes('prev') || lower.includes('pichhla')) {
-        playPrevTrack();
-        updateDialogue(text, 'जी मास्टर, पिछला गाना चला दिया है। 🎶');
-        speakText('जी मास्टर, पिछला गाना चला दिया है।');
-      } else if (lower.includes('band') || lower.includes('rok') || lower.includes('pause') || lower.includes('stop')) {
-        toggleAudioPlay(false);
-        updateDialogue(text, 'जी मास्टर, म्यूजिक रोक दिया है।');
-        speakText('जी मास्टर, म्यूजिक रोक दिया है।');
-      } else {
-        closeAllHUDs();
-        openHUD(DOM.musicOverlayHUD);
-        toggleAudioPlay(true);
-        updateDialogue(text, 'जी मास्टर! आपके लिए म्यूजिक प्लेयर शुरू कर दिया है। 🎶');
-        speakText('जी मास्टर! आपके लिए मस्त म्यूजिक शुरू कर दिया है!');
-      }
+      let songQuery = 'hindi lofi songs chill beats';
+      if (lower.includes('arijit')) songQuery = 'Arijit Singh hit songs';
+      else if (lower.includes('sidhu')) songQuery = 'Sidhu Moosewala all hit songs';
+      else if (lower.includes('shreya')) songQuery = 'Shreya Ghoshal songs';
+      else if (lower.includes('bollywood')) songQuery = 'Bollywood trending songs';
+      else if (lower.includes('punjabi')) songQuery = 'Punjabi top songs';
+      else if (lower.includes('anime')) songQuery = 'Anime chill lofi';
+
+      playDirectYouTube(songQuery, 'YouTube Direct Music Stream');
+      updateDialogue(text, 'जी मास्टर! आपके लिए यूट्यूब पर गाना शुरू कर दिया है। 🎶 (बंद करने के लिए बोलिए: "Band karo")');
+      speakText('जी मास्टर! यूट्यूब पर गाना शुरू कर दिया है!');
       return;
     }
 
-    // Command 2: VIDEO COMMAND ("Video chalao" / "Video dikhao")
-    if (lower.includes('video') || lower.includes('वीडियो') || lower.includes('movie')) {
-      if (lower.includes('band') || lower.includes('rok') || lower.includes('pause') || lower.includes('stop')) {
-        if (DOM.dashboardVideo) DOM.dashboardVideo.pause();
-        updateDialogue(text, 'जी मास्टर, वीडियो रोक दिया है।');
-        speakText('जी मास्टर, वीडियो रोक दिया है।');
-      } else {
-        closeAllHUDs();
-        openHUD(DOM.videoOverlayHUD);
-        playDirectVideo();
-        updateDialogue(text, 'जी मास्टर! आपके लिए वीडियो सेंटर खोलकर वीडियो शुरू कर दिया है। 🎬');
-        speakText('जी मास्टर! वीडियो शुरू कर दिया है!');
-      }
+    // Command 3: YOUTUBE VIDEO ("Video chalao" / "YouTube chalao" / "Video dikhao")
+    if (lower.includes('video') || lower.includes('वीडियो') || lower.includes('movie') || lower.includes('youtube')) {
+      let vidQuery = 'cyberpunk anime 4k';
+      if (lower.includes('comedy')) vidQuery = 'best comedy scenes hindi';
+      else if (lower.includes('action')) vidQuery = 'best action movie clips';
+      else if (lower.includes('tech') || lower.includes('ai')) vidQuery = 'future ai technology 4k';
+
+      playDirectYouTube(vidQuery, 'YouTube Direct Video Center');
+      updateDialogue(text, 'जी मास्टर! आपके लिए यूट्यूब वीडियो शुरू कर दिया है। 🎬 (बंद करने के लिए बोलिए: "Band karo")');
+      speakText('जी मास्टर! यूट्यूब वीडियो शुरू कर दिया है!');
       return;
     }
 
-    // Command 3: DASHBOARD COMMAND ("Dashboard dikhao" / "All features dikhao")
+    // Command 4: DASHBOARD COMMAND ("Dashboard dikhao" / "All features dikhao")
     if (lower.includes('dashboard') || lower.includes('डैशबोर्ड') || lower.includes('all feature') || lower.includes('features')) {
       closeAllHUDs();
       openHUD(DOM.dashboardOverlayHUD);
       loadCreationsVault();
       updateDialogue(text, 'जी मास्टर! पूरा डैशबोर्ड और सभी फीचर्स आपके सामने हैं। 📊');
       speakText('जी मास्टर विहुहुहु, पूरा डैशबोर्ड और सभी फीचर्स आपके सामने हैं!');
-      return;
-    }
-
-    // Command 4: CLOSE / HIDE COMMAND ("Band karo" / "Chhupao" / "Close" / "Hide")
-    if (lower.includes('band karo') || lower.includes('chhupao') || lower.includes('close') || lower.includes('hide') || lower.includes('hatao') || lower.includes('screen saaf')) {
-      closeAllHUDs();
-      updateDialogue(text, 'जी मास्टर, सभी फीचर्स छुपा दिए हैं और स्क्रीन साफ़ कर दी है। ✨');
-      speakText('जी मास्टर, सभी फीचर्स छुपा दिए हैं।');
       return;
     }
 
@@ -839,6 +983,7 @@
   }
 
   function closeAllHUDs() {
+    stopDirectYouTube();
     DOM.musicOverlayHUD.classList.add('hidden');
     DOM.videoOverlayHUD.classList.add('hidden');
     DOM.sandboxOverlayHUD.classList.add('hidden');
@@ -1256,6 +1401,11 @@
     // Tapping the Secret Code Badge quick-authorizes as fallback
     if (DOM.authCodeBadge) {
       DOM.authCodeBadge.addEventListener('click', authorizeMaster);
+    }
+
+    // Close Direct YouTube Button
+    if (DOM.closeYoutubeOverlayBtn) {
+      DOM.closeYoutubeOverlayBtn.addEventListener('click', stopDirectYouTube);
     }
 
     // Stage Top Actions
