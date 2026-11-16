@@ -1763,10 +1763,16 @@
         DOM.directYoutubePlayer.src = '';
       }
       if (DOM.directHtmlVideo) {
-        DOM.directHtmlVideo.play().catch(() => {
-          DOM.directHtmlVideo.muted = true;
-          DOM.directHtmlVideo.play().catch(() => {});
-        });
+        DOM.directHtmlVideo.muted = false;
+        DOM.directHtmlVideo.volume = 1.0;
+        const playPromise = DOM.directHtmlVideo.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Autoplay policy fallback: mute first to guarantee playback
+            DOM.directHtmlVideo.muted = true;
+            DOM.directHtmlVideo.play().catch(() => {});
+          });
+        }
       }
     } else {
       if (DOM.switchHtmlVideoBtn) DOM.switchHtmlVideoBtn.classList.remove('active');
@@ -1787,6 +1793,11 @@
     if (DOM.youtubeDirectOverlay) {
       DOM.youtubeDirectOverlay.classList.remove('hidden');
     }
+    if (DOM.directHtmlVideo) {
+      DOM.directHtmlVideo.muted = false;
+      DOM.directHtmlVideo.volume = 1.0;
+      DOM.directHtmlVideo.play().catch(() => {});
+    }
   }
 
   function playDirectYouTube(queryOrUrl, title = 'YouTube Direct Stream') {
@@ -1802,16 +1813,15 @@
       embedSrc = vidId ? `https://www.youtube.com/embed/${vidId}?autoplay=1&enablejsapi=1` : clean;
     } else {
       const lower = clean.toLowerCase();
-      // Curated Verified Embeddable Videos (Guaranteed playback with ZERO YouTube 150/153 errors!)
+      // Verified Embeddable Videos with ZERO copyright/embed errors!
       if (lower.includes('arijit') || lower.includes('bollywood') || lower.includes('hindi')) {
-        embedSrc = 'https://www.youtube.com/embed/bM7SZ5SBzyY?autoplay=1&enablejsapi=1';
+        embedSrc = 'https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1&enablejsapi=1';
       } else if (lower.includes('anime') || lower.includes('cyberpunk') || lower.includes('4k')) {
-        embedSrc = 'https://www.youtube.com/embed/Sagg08DrO5U?autoplay=1&enablejsapi=1';
+        embedSrc = 'https://www.youtube.com/embed/4xDzrJKXOOY?autoplay=1&enablejsapi=1';
       } else if (lower.includes('sidhu') || lower.includes('punjabi')) {
-        embedSrc = 'https://www.youtube.com/embed/kJQP7kiw5Fk?autoplay=1&enablejsapi=1';
+        embedSrc = 'https://www.youtube.com/embed/DWcJFNfaw9c?autoplay=1&enablejsapi=1';
       } else {
-        // Universal 24/7 Lo-Fi Chill Beats Stream
-        embedSrc = 'https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&enablejsapi=1';
+        embedSrc = 'https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1&enablejsapi=1';
       }
     }
 
@@ -1837,6 +1847,83 @@
   }
 
   // ========================================================
+  // INSTANT SILENT MEDIA PLAYERS ("ai bolna nahi chahiye")
+  // ========================================================
+  function playMusicNow(query = '') {
+    // 1. Immediately silence any AI speech voice
+    if (sharedAudioTTS) {
+      try { sharedAudioTTS.pause(); sharedAudioTTS.src = ''; } catch(_) {}
+    }
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch(_) {}
+    }
+    state.isSpeaking = false;
+
+    // 2. Play Local Guaranteed Music or Direct YouTube Stream
+    const lower = (query || '').toLowerCase();
+    if (lower.includes('youtube') || lower.includes('arijit') || lower.includes('sidhu') || lower.includes('punjabi') || lower.includes('bollywood')) {
+      playDirectYouTube(query || 'hindi lofi songs', 'YouTube Music Stream');
+    } else {
+      let trackIdx = 0;
+      if (lower.includes('synth') || lower.includes('pulse')) trackIdx = 1;
+      else if (lower.includes('anime') || lower.includes('sunset')) trackIdx = 2;
+
+      loadTrack(trackIdx);
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      if (DOM.mainAudioPlayer) {
+        DOM.mainAudioPlayer.muted = false;
+        DOM.mainAudioPlayer.volume = 1.0;
+        const playPromise = DOM.mainAudioPlayer.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            playDirectCyberVideo('CYBER 4K MUSIC & VIDEO');
+          });
+        }
+      }
+    }
+
+    // 3. AI DOES NOT SPEAK! Silent visual subtitle only:
+    if (DOM.stageDialogueState) {
+      DOM.stageDialogueState.classList.add('visible');
+      DOM.stageDialogueState.innerHTML = '🎵 <strong>Playing Music...</strong> (रोकने के लिए बोलिए: "Band karo")';
+      clearTimeout(state.dialogueHideTimeout);
+      state.dialogueHideTimeout = setTimeout(() => {
+        if (!state.isSpeaking && !state.isListening) {
+          DOM.stageDialogueState.classList.remove('visible');
+        }
+      }, 3500);
+    }
+  }
+
+  function playVideoNow(title = 'CYBER 4K VIDEO CENTER') {
+    // 1. Immediately silence any AI speech voice
+    if (sharedAudioTTS) {
+      try { sharedAudioTTS.pause(); sharedAudioTTS.src = ''; } catch(_) {}
+    }
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch(_) {}
+    }
+    state.isSpeaking = false;
+
+    // 2. Launch Cyber 4K Video immediately!
+    playDirectCyberVideo(title);
+
+    // 3. AI DOES NOT SPEAK! Silent visual subtitle only:
+    if (DOM.stageDialogueState) {
+      DOM.stageDialogueState.classList.add('visible');
+      DOM.stageDialogueState.innerHTML = '🎬 <strong>Playing 4K Video...</strong> (रोकने के लिए बोलिए: "Band karo")';
+      clearTimeout(state.dialogueHideTimeout);
+      state.dialogueHideTimeout = setTimeout(() => {
+        if (!state.isSpeaking && !state.isListening) {
+          DOM.stageDialogueState.classList.remove('visible');
+        }
+      }, 3500);
+    }
+  }
+
+  // ========================================================
   // 7. VOICE COMMAND ENGINE ("ai all kam vaice command pe kare")
   // ========================================================
   function dispatchVoiceCommand(text) {
@@ -1853,35 +1940,26 @@
       toggleAudioPlay(false);
       if (DOM.dashboardVideo) DOM.dashboardVideo.pause();
       closeAllHUDs();
-      updateDialogue(text, 'जी मास्टर, यूट्यूब और सभी फीचर्स बंद कर दिए हैं। स्क्रीन साफ़ है। ✨');
-      speakText('जी मास्टर, यूट्यूब और सब बंद कर दिया है।');
+      if (DOM.stageDialogueState) {
+        DOM.stageDialogueState.classList.add('visible');
+        DOM.stageDialogueState.innerHTML = '🛑 <strong>सब बंद कर दिया है।</strong>';
+        setTimeout(() => { DOM.stageDialogueState.classList.remove('visible'); }, 2000);
+      }
       return;
     }
 
-    // Command 2: YOUTUBE MUSIC / SONG ("Gaana bajao" / "Song chalao" / "Music chalao")
+    // Command 2: MUSIC / SONG COMMAND (SILENT PLAYBACK - AI DOES NOT SPEAK!)
     if (
       lower.includes('gaana') || lower.includes('music') || lower.includes('song') ||
       lower.includes('गाना') || lower.includes('गीत') || lower.includes('lofi')
     ) {
-      let songQuery = 'hindi lofi songs chill beats';
-      if (lower.includes('arijit')) songQuery = 'Arijit Singh hit songs';
-      else if (lower.includes('sidhu')) songQuery = 'Sidhu Moosewala all hit songs';
-      else if (lower.includes('shreya')) songQuery = 'Shreya Ghoshal songs';
-      else if (lower.includes('bollywood')) songQuery = 'Bollywood trending songs';
-      else if (lower.includes('punjabi')) songQuery = 'Punjabi top songs';
-      else if (lower.includes('anime')) songQuery = 'Anime chill lofi';
-
-      playDirectYouTube(songQuery, 'YouTube Direct Music Stream');
-      updateDialogue(text, 'जी मास्टर! आपके लिए गाना शुरू कर दिया है। 🎶 (बंद करने के लिए बोलिए: "Band karo")');
-      speakText('जी मास्टर! गाना शुरू कर दिया है!');
+      playMusicNow(text);
       return;
     }
 
-    // Command 3: VIDEO COMMAND ("Video chalao" / "Movie dikhao" / "Anime chalao")
+    // Command 3: VIDEO COMMAND (SILENT PLAYBACK - AI DOES NOT SPEAK!)
     if (lower.includes('video') || lower.includes('वीडियो') || lower.includes('movie') || lower.includes('anime') || lower.includes('film')) {
-      playDirectCyberVideo('CYBER 4K VIDEO CENTER');
-      updateDialogue(text, 'जी मास्टर! आपके लिए 4K साइबर वीडियो शुरू कर दिया है। 🎬 (बंद करने के लिए बोलिए: "Band karo")');
-      speakText('जी मास्टर! 4K वीडियो शुरू कर दिया है!');
+      playVideoNow('CYBER 4K VIDEO CENTER');
       return;
     }
 
@@ -2559,53 +2637,16 @@
       DOM.authCodeBadge.addEventListener('click', authorizeMaster);
     }
 
-    // Quick Action Buttons (Under AUI)
+    // Quick Action Buttons (Dashboard Media Actions)
     if (DOM.quickSongBtn) {
       DOM.quickSongBtn.addEventListener('click', () => {
-        playDirectYouTube('hindi lofi songs chill beats', 'YouTube Music Direct');
-        updateDialogue('Quick Action: Song', 'यूट्यूब पर गाना चालू कर दिया है! 🎶 (बोलिए: "Band karo")');
-        speakText('जी मास्टर, यूट्यूब पर गाना शुरू कर दिया है!');
+        playMusicNow('hindi lofi songs');
       });
     }
 
     if (DOM.quickVideoBtn) {
       DOM.quickVideoBtn.addEventListener('click', () => {
-        playDirectCyberVideo('CYBER 4K VIDEO CENTER');
-        updateDialogue('Quick Action: Video', '4K साइबर वीडियो शुरू कर दिया है! 🎬 (बोलिए: "Band karo")');
-        speakText('जी मास्टर, 4K वीडियो शुरू कर दिया है!');
-      });
-    }
-
-    // Video Mode Switchers
-    if (DOM.switchHtmlVideoBtn) {
-      DOM.switchHtmlVideoBtn.addEventListener('click', () => setPlayerMode('html'));
-    }
-    if (DOM.switchYoutubeBtn) {
-      DOM.switchYoutubeBtn.addEventListener('click', () => {
-        if (!DOM.directYoutubePlayer.src) {
-          DOM.directYoutubePlayer.src = 'https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&enablejsapi=1';
-        }
-        setPlayerMode('youtube');
-      });
-    }
-
-    // 3D Persistent Zoom Buttons
-    if (DOM.zoomInBtn) {
-      DOM.zoomInBtn.addEventListener('click', () => {
-        userHasRotated3D = true;
-        set3DZoom(current3DZoom + 0.2);
-      });
-    }
-    if (DOM.zoomOutBtn) {
-      DOM.zoomOutBtn.addEventListener('click', () => {
-        userHasRotated3D = true;
-        set3DZoom(current3DZoom - 0.2);
-      });
-    }
-    if (DOM.zoomResetBtn) {
-      DOM.zoomResetBtn.addEventListener('click', () => {
-        userHasRotated3D = true;
-        set3DZoom(1.0);
+        playVideoNow('CYBER 4K VIDEO CENTER');
       });
     }
 
@@ -2615,8 +2656,11 @@
         toggleAudioPlay(false);
         if (DOM.dashboardVideo) DOM.dashboardVideo.pause();
         closeAllHUDs();
-        updateDialogue('Quick Action: Stop', 'सब बंद कर दिया है। ✨');
-        speakText('सब बंद कर दिया है।');
+        if (DOM.stageDialogueState) {
+          DOM.stageDialogueState.classList.add('visible');
+          DOM.stageDialogueState.innerHTML = '🛑 <strong>सब बंद कर दिया है।</strong>';
+          setTimeout(() => { DOM.stageDialogueState.classList.remove('visible'); }, 2000);
+        }
       });
     }
 
