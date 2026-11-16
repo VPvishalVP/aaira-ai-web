@@ -1,28 +1,28 @@
 /* ========================================================
-   AAIRA AI • CLIENT CORE CONTROLLER
-   Quantum AI Gateway • Live Code Sandbox • Music & Video
-   Master VIHUHUHU Special Edition
+   AAIRA AI • CLIENT CORE CONTROLLER (V2.1 - Master Vihuhuhu)
+   Voice AI Conversation Hub • Voice-Triggered Dashboard • Live Sandbox
    ======================================================== */
 
 (function() {
   'use strict';
 
-  // State Management
+  // Global State
   const state = {
-    authToken: localStorage.getItem('aaira_auth_token') || null,
-    generatedKey: null,
-    keyExpiresTimer: null,
+    currentScreen: 'hub', // 'hub' | 'dashboard'
+    autoListen: true,
     ttsEnabled: true,
     isListening: false,
+    isSpeaking: false,
     chatHistory: [],
     currentCreationCode: null,
     currentCreationTitle: 'Untitled App',
     currentTrackIndex: 0,
     isPlayingAudio: false,
-    audioInitialized: false
+    audioInitialized: false,
+    bestVoice: null
   };
 
-  // Curated Royalty-Free Music Playlist (High-speed reliable audio)
+  // Curated Royalty-Free Music Playlist
   const PLAYLIST = [
     {
       title: 'Midnight Lo-Fi Chill Beats',
@@ -46,26 +46,31 @@
     }
   ];
 
-  // DOM Elements Cache
+  // DOM Elements
   const DOM = {
-    // Screen 1: Auth Gateway
-    authScreen: document.getElementById('authScreen'),
-    orbCanvas: document.getElementById('orbCanvas'),
-    orbCenterBtn: document.getElementById('orbCenterBtn'),
-    authCard: document.getElementById('authCard'),
-    slot0: document.getElementById('slot0'),
-    slot1: document.getElementById('slot1'),
-    slot2: document.getElementById('slot2'),
-    keyInput: document.getElementById('keyInput'),
-    copyKeyBtn: document.getElementById('copyKeyBtn'),
-    unlockBtn: document.getElementById('unlockBtn'),
-    keyTimer: document.getElementById('keyTimer'),
-    authMessage: document.getElementById('authMessage'),
+    // Screen 1: Voice Hub
+    voiceHubScreen: document.getElementById('voiceHubScreen'),
+    autoListenToggle: document.getElementById('autoListenToggle'),
+    hubGoDashboardBtn: document.getElementById('hubGoDashboardBtn'),
+    hubOrbCanvas: document.getElementById('hubOrbCanvas'),
+    hubOrbCore: document.getElementById('hubOrbCore'),
+    hubOrbIcon: document.getElementById('hubOrbIcon'),
+    hubOrbText: document.getElementById('hubOrbText'),
+    dialogueState: document.getElementById('dialogueState'),
+    dialogueContent: document.getElementById('dialogueContent'),
+    hubCodeNotification: document.getElementById('hubCodeNotification'),
+    hubCodeTitle: document.getElementById('hubCodeTitle'),
+    hubRunInDashBtn: document.getElementById('hubRunInDashBtn'),
+    hubMicBtn: document.getElementById('hubMicBtn'),
+    hubTextInput: document.getElementById('hubTextInput'),
+    hubSendBtn: document.getElementById('hubSendBtn'),
+    voiceChips: document.querySelectorAll('.voice-chip'),
 
     // Screen 2: Dashboard
     dashboardScreen: document.getElementById('dashboardScreen'),
-    lockSystemBtn: document.getElementById('lockSystemBtn'),
+    backToHubBtn: document.getElementById('backToHubBtn'),
     ttsToggleBtn: document.getElementById('ttsToggleBtn'),
+    toggleSandboxBtn: document.getElementById('toggleSandboxBtn'),
     toggleMusicBtn: document.getElementById('toggleMusicBtn'),
     toggleVideoBtn: document.getElementById('toggleVideoBtn'),
     toggleVaultBtn: document.getElementById('toggleVaultBtn'),
@@ -84,7 +89,6 @@
     micBtn: document.getElementById('micBtn'),
     voiceStatusBar: document.getElementById('voiceStatusBar'),
     voiceStatusText: document.getElementById('voiceStatusText'),
-    promptsScroll: document.querySelector('.prompts-scroll'),
 
     // Right Media Dock
     mediaDock: document.getElementById('mediaDock'),
@@ -125,6 +129,7 @@
     dashboardVideo: document.getElementById('dashboardVideo'),
     youtubeVideoFrame: document.getElementById('youtubeVideoFrame'),
     currentVideoTitle: document.getElementById('currentVideoTitle'),
+    videoPlayDirectBtn: document.getElementById('videoPlayDirectBtn'),
     videoFullscreenBtn: document.getElementById('videoFullscreenBtn'),
     videoChips: document.querySelectorAll('.video-chip'),
     customVideoUrl: document.getElementById('customVideoUrl'),
@@ -139,25 +144,23 @@
   // ========================================================
   let orbCtx = null;
   let orbAnimId = null;
-  let orbShockwave = 0;
   let particles = [];
 
   function initOrbCanvas() {
-    if (!DOM.orbCanvas) return;
-    orbCtx = DOM.orbCanvas.getContext('2d');
-    const width = DOM.orbCanvas.width = 380;
-    const height = DOM.orbCanvas.height = 380;
+    if (!DOM.hubOrbCanvas) return;
+    orbCtx = DOM.hubOrbCanvas.getContext('2d');
+    const width = DOM.hubOrbCanvas.width = 400;
+    const height = DOM.hubOrbCanvas.height = 400;
 
-    // Generate orbiting particles
     particles = [];
-    for (let i = 0; i < 48; i++) {
+    for (let i = 0; i < 50; i++) {
       particles.push({
         angle: Math.random() * Math.PI * 2,
-        radius: 65 + Math.random() * 85,
-        speed: (0.005 + Math.random() * 0.015) * (Math.random() > 0.5 ? 1 : -1),
+        radius: 65 + Math.random() * 95,
+        speed: (0.006 + Math.random() * 0.018) * (Math.random() > 0.5 ? 1 : -1),
         size: 1.5 + Math.random() * 2.5,
         color: Math.random() > 0.4 ? '#00f0ff' : '#ff007f',
-        alpha: 0.3 + Math.random() * 0.7
+        alpha: 0.35 + Math.random() * 0.65
       });
     }
 
@@ -166,30 +169,37 @@
 
   function renderOrb(time) {
     if (!orbCtx) return;
-    const w = DOM.orbCanvas.width;
-    const h = DOM.orbCanvas.height;
+    const w = DOM.hubOrbCanvas.width;
+    const h = DOM.hubOrbCanvas.height;
     const cx = w / 2;
     const cy = h / 2;
 
     orbCtx.clearRect(0, 0, w, h);
-
     const t = time * 0.001;
 
-    // Draw Outer Cyber Ring with Tick Marks
+    // React to Speaking or Listening
+    let pulseScale = 1 + Math.sin(t * 3.5) * 0.1;
+    if (state.isSpeaking) {
+      pulseScale = 1.15 + Math.sin(t * 8) * 0.22;
+    } else if (state.isListening) {
+      pulseScale = 1.1 + Math.sin(t * 6) * 0.16;
+    }
+
+    // Outer Cyber Ring with Tick Marks
     orbCtx.save();
     orbCtx.translate(cx, cy);
     orbCtx.rotate(t * 0.2);
 
-    orbCtx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
+    orbCtx.strokeStyle = state.isSpeaking ? 'rgba(255, 0, 127, 0.45)' : 'rgba(0, 240, 255, 0.35)';
     orbCtx.lineWidth = 1.5;
     orbCtx.beginPath();
-    orbCtx.arc(0, 0, 140, 0, Math.PI * 2);
+    orbCtx.arc(0, 0, 145, 0, Math.PI * 2);
     orbCtx.stroke();
 
     for (let i = 0; i < 36; i++) {
       const angle = (i / 36) * Math.PI * 2;
-      const r1 = i % 3 === 0 ? 146 : 142;
-      const r2 = 140;
+      const r1 = i % 3 === 0 ? 152 : 147;
+      const r2 = 145;
       orbCtx.beginPath();
       orbCtx.moveTo(Math.cos(angle) * r1, Math.sin(angle) * r1);
       orbCtx.lineTo(Math.cos(angle) * r2, Math.sin(angle) * r2);
@@ -197,30 +207,30 @@
     }
     orbCtx.restore();
 
-    // Draw Inner Counter-Rotating Rings
+    // Orbiting Elliptical Rings
     orbCtx.save();
     orbCtx.translate(cx, cy);
-    orbCtx.rotate(-t * 0.35);
-    orbCtx.strokeStyle = 'rgba(255, 0, 127, 0.35)';
-    orbCtx.lineWidth = 1;
+    orbCtx.rotate(-t * 0.3);
+    orbCtx.strokeStyle = state.isListening ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 0, 127, 0.4)';
+    orbCtx.lineWidth = 1.2;
     orbCtx.setLineDash([8, 12]);
     orbCtx.beginPath();
-    orbCtx.ellipse(0, 0, 115, 75, t * 0.5, 0, Math.PI * 2);
+    orbCtx.ellipse(0, 0, 120, 80, t * 0.6, 0, Math.PI * 2);
     orbCtx.stroke();
     orbCtx.setLineDash([]);
     orbCtx.restore();
 
     orbCtx.save();
     orbCtx.translate(cx, cy);
-    orbCtx.rotate(t * 0.4);
-    orbCtx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+    orbCtx.rotate(t * 0.35);
+    orbCtx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
     orbCtx.lineWidth = 1.2;
     orbCtx.beginPath();
-    orbCtx.ellipse(0, 0, 80, 110, -t * 0.4, 0, Math.PI * 2);
+    orbCtx.ellipse(0, 0, 85, 115, -t * 0.4, 0, Math.PI * 2);
     orbCtx.stroke();
     orbCtx.restore();
 
-    // Draw Orbiting Particles
+    // Particles
     for (const p of particles) {
       p.angle += p.speed;
       const px = cx + Math.cos(p.angle) * p.radius;
@@ -237,39 +247,32 @@
     orbCtx.globalAlpha = 1;
     orbCtx.shadowBlur = 0;
 
-    // Center Core Pulsing Plasma Glow
-    const pulse = 1 + Math.sin(t * 3) * 0.12;
-    const gradient = orbCtx.createRadialGradient(cx, cy, 5, cx, cy, 65 * pulse);
-    gradient.addColorStop(0, 'rgba(0, 240, 255, 0.85)');
-    gradient.addColorStop(0.35, 'rgba(0, 240, 255, 0.35)');
-    gradient.addColorStop(0.75, 'rgba(168, 85, 247, 0.2)');
+    // Glowing Plasma Core
+    const gradient = orbCtx.createRadialGradient(cx, cy, 6, cx, cy, 70 * pulseScale);
+    if (state.isSpeaking) {
+      gradient.addColorStop(0, 'rgba(255, 0, 127, 0.85)');
+      gradient.addColorStop(0.4, 'rgba(255, 0, 127, 0.4)');
+      gradient.addColorStop(0.8, 'rgba(168, 85, 247, 0.2)');
+    } else if (state.isListening) {
+      gradient.addColorStop(0, 'rgba(16, 185, 129, 0.85)');
+      gradient.addColorStop(0.4, 'rgba(16, 185, 129, 0.4)');
+      gradient.addColorStop(0.8, 'rgba(0, 240, 255, 0.2)');
+    } else {
+      gradient.addColorStop(0, 'rgba(0, 240, 255, 0.85)');
+      gradient.addColorStop(0.4, 'rgba(0, 240, 255, 0.35)');
+      gradient.addColorStop(0.8, 'rgba(168, 85, 247, 0.2)');
+    }
     gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
     orbCtx.fillStyle = gradient;
     orbCtx.beginPath();
-    orbCtx.arc(cx, cy, 65 * pulse, 0, Math.PI * 2);
+    orbCtx.arc(cx, cy, 70 * pulseScale, 0, Math.PI * 2);
     orbCtx.fill();
-
-    // Shockwave ripple animation if triggered
-    if (orbShockwave > 0) {
-      orbCtx.save();
-      orbCtx.strokeStyle = `rgba(0, 240, 255, ${Math.max(0, 1 - orbShockwave / 160)})`;
-      orbCtx.lineWidth = 3;
-      orbCtx.shadowColor = '#00f0ff';
-      orbCtx.shadowBlur = 15;
-      orbCtx.beginPath();
-      orbCtx.arc(cx, cy, orbShockwave, 0, Math.PI * 2);
-      orbCtx.stroke();
-      orbCtx.restore();
-
-      orbShockwave += 5;
-      if (orbShockwave > 170) orbShockwave = 0;
-    }
 
     orbAnimId = requestAnimationFrame(renderOrb);
   }
 
-  // Synthesize Web Audio Chimes & Beeps
+  // Synthesize Web Audio Chimes
   function playAudioTone(freq = 880, duration = 0.15, type = 'sine') {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -291,174 +294,323 @@
   }
 
   // ========================================================
-  // 2. 3-DIGIT AUTHORIZED KEY GENERATION & UNLOCK LOGIC
+  // 2. NAVIGATION: VOICE HUB <-> DASHBOARD TRANSITIONS
   // ========================================================
 
-  async function handleOrbClick() {
-    // Trigger visual shockwave & audio beep
-    orbShockwave = 20;
-    playAudioTone(720, 0.1, 'sine');
-    setTimeout(() => playAudioTone(1140, 0.2, 'triangle'), 100);
+  function openDashboard(autoMessage = null) {
+    state.currentScreen = 'dashboard';
+    DOM.voiceHubScreen.classList.add('fade-out');
 
-    try {
-      // Call server to generate authorized 3-digit key
-      const res = await fetch('/api/generate-key', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await res.json();
+    setTimeout(() => {
+      DOM.voiceHubScreen.classList.add('hidden');
+      DOM.dashboardScreen.classList.remove('hidden');
+      initDashboardComponents();
 
-      let keyStr = '742';
-      if (data && data.success && data.key) {
-        keyStr = String(data.key);
-      } else {
-        // Fallback local 3-digit number
-        keyStr = Math.floor(100 + Math.random() * 900).toString();
+      if (autoMessage) {
+        handleSendPrompt(autoMessage);
       }
-
-      state.generatedKey = keyStr;
-      displayGeneratedKey(keyStr);
-
-      // Start Countdown Timer (5:00)
-      startKeyTimer(300);
-
-    } catch (err) {
-      console.warn('[Key Gen Warning]', err);
-      const fallbackKey = Math.floor(100 + Math.random() * 900).toString();
-      state.generatedKey = fallbackKey;
-      displayGeneratedKey(fallbackKey);
-      startKeyTimer(300);
-    }
+    }, 350);
   }
 
-  function displayGeneratedKey(key) {
-    if (!key || key.length < 3) return;
-    DOM.slot0.textContent = key[0];
-    DOM.slot1.textContent = key[1];
-    DOM.slot2.textContent = key[2];
-
-    DOM.keyInput.value = key;
-    DOM.authCard.classList.remove('hidden');
-
-    showAuthMessage(`Key Generated: ${key}. Click Authorize to unlock!`, 'success');
+  function openVoiceHub() {
+    state.currentScreen = 'hub';
+    DOM.dashboardScreen.classList.add('hidden');
+    DOM.voiceHubScreen.classList.remove('fade-out', 'hidden');
   }
 
-  function startKeyTimer(seconds) {
-    clearInterval(state.keyExpiresTimer);
-    let remaining = seconds;
-    updateTimerDisplay(remaining);
+  // ========================================================
+  // 3. SUPERIOR NATURAL TTS VOICE ENGINE ("vaice achcha karo")
+  // ========================================================
 
-    state.keyExpiresTimer = setInterval(() => {
-      remaining--;
-      if (remaining <= 0) {
-        clearInterval(state.keyExpiresTimer);
-        DOM.keyTimer.innerHTML = '<i class="fa-regular fa-clock"></i> Expired';
-        showAuthMessage('Key expired. Tap core to generate a new key.', 'error');
-      } else {
-        updateTimerDisplay(remaining);
-      }
-    }, 1000);
+  function loadBestVoice() {
+    if (!window.speechSynthesis) return;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return;
+
+    // Prioritize natural female Hindi and Indian English voices
+    state.bestVoice = 
+      voices.find(v => v.lang.startsWith('hi') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Online'))) ||
+      voices.find(v => v.lang.startsWith('hi')) ||
+      voices.find(v => v.lang.includes('IN') && (v.name.includes('Google') || v.name.includes('Female') || v.name.includes('Natural'))) ||
+      voices.find(v => v.lang.includes('IN')) ||
+      voices.find(v => v.name.includes('Google UK English Female') || v.name.includes('Samantha') || v.name.includes('Zira')) ||
+      voices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) ||
+      voices[0];
+
+    console.log('[Voice] Selected Voice:', state.bestVoice ? state.bestVoice.name : 'Default');
   }
 
-  function updateTimerDisplay(sec) {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    DOM.keyTimer.innerHTML = `<i class="fa-regular fa-clock"></i> ${m}:${s < 10 ? '0' : ''}${s}`;
+  if (window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = loadBestVoice;
+    loadBestVoice();
   }
 
-  function showAuthMessage(text, type = 'error') {
-    DOM.authMessage.textContent = text;
-    DOM.authMessage.className = `auth-message ${type}`;
-    DOM.authMessage.style.display = 'block';
-  }
-
-  async function verifyAndUnlock() {
-    const inputVal = DOM.keyInput.value.trim();
-    if (!inputVal) {
-      showAuthMessage('Kripya 3-Digit Authorized Key enter karein!', 'error');
+  function speakText(rawText, onDone = null) {
+    if (!state.ttsEnabled || !window.speechSynthesis) {
+      if (onDone) onDone();
       return;
     }
 
     try {
-      const res = await fetch('/api/verify-key', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: inputVal })
-      });
-      const data = await res.json();
+      window.speechSynthesis.cancel();
 
-      if (data && data.success) {
-        showAuthMessage('ACCESS GRANTED! Welcome Master VIHUHUHU...', 'success');
-        playAudioTone(523.25, 0.15);
-        setTimeout(() => playAudioTone(659.25, 0.15), 150);
-        setTimeout(() => playAudioTone(783.99, 0.3), 300);
+      // Clean text for natural speech: strip markdown, code blocks, URLs, and symbols
+      let clean = rawText
+        .replace(/```[\s\S]*?```/g, 'मैंने इसका पूरा कोड तैयार कर दिया है। आप इसे लाइव चला सकते हैं।')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/#+\s/g, '')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/https?:\/\/\S+/g, '')
+        .replace(/[💠✨🚀🎮🧮🎵🎬🫡🙏]/g, '')
+        .trim();
 
-        if (data.token) {
-          state.authToken = data.token;
-          localStorage.setItem('aaira_auth_token', data.token);
-        }
+      if (!clean) {
+        clean = "जी मास्टर विहुहुहु, मैंने काम कर दिया है!";
+      }
 
-        // Voice Welcome
-        speakReply('Welcome Master Vihuhuhu! AAIRA quantum core unlocked.');
+      const utterance = new SpeechSynthesisUtterance(clean);
+      if (state.bestVoice) utterance.voice = state.bestVoice;
 
-        // Transition from Auth to Dashboard
-        setTimeout(() => {
-          DOM.authScreen.classList.add('dissolve');
+      utterance.rate = 0.98; // Natural warm speaking speed
+      utterance.pitch = 1.12; // Sweet, clear female companion tone
+
+      utterance.onstart = () => {
+        state.isSpeaking = true;
+        DOM.hubOrbCore.classList.add('speaking');
+        DOM.hubOrbText.textContent = 'SPEAKING...';
+        DOM.dialogueState.textContent = 'Speaking... (बोल रही हूँ)';
+      };
+
+      utterance.onend = () => {
+        state.isSpeaking = false;
+        DOM.hubOrbCore.classList.remove('speaking');
+        DOM.hubOrbText.textContent = 'TAP TO SPEAK';
+        DOM.dialogueState.textContent = 'Ready • मास्टर, बोलिए...';
+
+        if (onDone) onDone();
+
+        // Auto-listen mode: automatically open mic after AAIRA speaks!
+        if (state.autoListen && state.currentScreen === 'hub') {
           setTimeout(() => {
-            DOM.authScreen.classList.add('hidden');
-            DOM.dashboardScreen.classList.remove('hidden');
-            initDashboardComponents();
-          }, 450);
-        }, 500);
+            if (!state.isSpeaking && !state.isListening) {
+              startListening();
+            }
+          }, 400);
+        }
+      };
 
-      } else {
-        playAudioTone(200, 0.3, 'sawtooth');
-        showAuthMessage(data.message || 'Invalid Authorized Key!', 'error');
-      }
-    } catch (err) {
-      // Local Master fallback
-      if (inputVal === '811' || inputVal === state.generatedKey) {
-        showAuthMessage('OFFLINE VERIFIED: Welcome Master VIHUHUHU!', 'success');
-        setTimeout(() => {
-          DOM.authScreen.classList.add('hidden');
-          DOM.dashboardScreen.classList.remove('hidden');
-          initDashboardComponents();
-        }, 500);
-      } else {
-        showAuthMessage('Verification failed. Kripya punah prayas karein.', 'error');
-      }
+      utterance.onerror = () => {
+        state.isSpeaking = false;
+        DOM.hubOrbCore.classList.remove('speaking');
+        DOM.hubOrbText.textContent = 'TAP TO SPEAK';
+        if (onDone) onDone();
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('[TTS Error]', e);
+      if (onDone) onDone();
     }
   }
 
-  function lockSystem() {
-    state.authToken = null;
-    localStorage.removeItem('aaira_auth_token');
-    DOM.dashboardScreen.classList.add('hidden');
-    DOM.authScreen.classList.remove('dissolve', 'hidden');
-    DOM.authCard.classList.add('hidden');
-    DOM.keyInput.value = '';
-    DOM.slot0.textContent = '-';
-    DOM.slot1.textContent = '-';
-    DOM.slot2.textContent = '-';
+  // ========================================================
+  // 4. SPEECH RECOGNITION (MIC & VOICE COMMANDS)
+  // ========================================================
+  let speechRecognizer = null;
+
+  function initSpeechRecognition() {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      console.warn('[Voice] Speech Recognition not supported in this browser');
+      return;
+    }
+
+    speechRecognizer = new SpeechRec();
+    speechRecognizer.continuous = false;
+    speechRecognizer.interimResults = false;
+    speechRecognizer.lang = 'hi-IN'; // Hindi + Hinglish
+
+    speechRecognizer.onstart = () => {
+      state.isListening = true;
+      DOM.hubOrbCore.classList.add('listening');
+      DOM.hubMicBtn.classList.add('listening');
+      DOM.micBtn.classList.add('listening');
+      DOM.hubOrbText.textContent = 'LISTENING...';
+      DOM.dialogueState.textContent = 'Listening to Master Vihuhuhu... (सुन रही हूँ)';
+      DOM.voiceStatusBar.classList.remove('hidden');
+      DOM.voiceStatusText.textContent = 'Listening to Master Vihuhuhu... (बोलिए)';
+      playAudioTone(880, 0.08);
+    };
+
+    speechRecognizer.onresult = (event) => {
+      const transcript = event.results[0][0].transcript.trim();
+      console.log('[Voice Rec]', transcript);
+
+      DOM.hubTextInput.value = transcript;
+      DOM.promptInput.value = transcript;
+
+      // Handle user voice input
+      handleVoiceInput(transcript);
+    };
+
+    speechRecognizer.onerror = (err) => {
+      console.warn('[Voice Error]', err);
+      stopListening();
+    };
+
+    speechRecognizer.onend = () => {
+      stopListening();
+    };
+  }
+
+  function startListening() {
+    if (!speechRecognizer) initSpeechRecognition();
+    if (!speechRecognizer) {
+      alert('Aapke browser me mic speech recognition support nahi hai.');
+      return;
+    }
+
+    try {
+      if (window.speechSynthesis && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+      }
+      speechRecognizer.start();
+    } catch (_) {}
+  }
+
+  function stopListening() {
+    state.isListening = false;
+    DOM.hubOrbCore.classList.remove('listening');
+    DOM.hubMicBtn.classList.remove('listening');
+    DOM.micBtn.classList.remove('listening');
+    DOM.hubOrbText.textContent = 'TAP TO SPEAK';
+    DOM.dialogueState.textContent = 'Ready • मास्टर, बोलिए...';
+    DOM.voiceStatusBar.classList.add('hidden');
+  }
+
+  function toggleListening() {
+    if (state.isListening) {
+      if (speechRecognizer) speechRecognizer.stop();
+    } else {
+      startListening();
+    }
+  }
+
+  // Interpret Voice Commands ("jab bolu ki dasbord tab dashbord pe jaye")
+  function handleVoiceInput(text) {
+    const lower = text.toLowerCase();
+
+    // 1. DASHBOARD COMMAND ("jab bolu ki dasbord tab dashbord pe jaye")
+    const dashboardTriggers = ['dashboard', 'डैशबोर्ड', 'dasbord', 'dash board', 'panel', 'open dashboard', 'dashboard kholo', 'dashboard pe jao', 'dashbord'];
+    const isDashboardCmd = dashboardTriggers.some(t => lower.includes(t));
+
+    if (isDashboardCmd) {
+      updateHubDialogue(`Master: "${text}"`, `जी मास्टर VIHUHUHU! डैशबोर्ड खोल रही हूँ... 🚀`);
+      speakText('जी मास्टर विहुहुहु, डैशबोर्ड खुल रहा है!', () => {
+        openDashboard();
+      });
+      return;
+    }
+
+    // 2. MUSIC COMMAND ("gaana bajao" / "music chalao")
+    if (lower.includes('gaana') || lower.includes('music') || lower.includes('song') || lower.includes('गाना') || lower.includes('गीत')) {
+      toggleAudioPlay(true);
+      updateHubDialogue(`Master: "${text}"`, `जी मास्टर! आपके लिए मस्त Lo-Fi Chill Beats शुरू कर दिए हैं। 🎶`);
+      speakText('जी मास्टर! आपके लिए म्यूजिक चला दिया है!');
+      return;
+    }
+
+    // 3. VIDEO COMMAND ("video chalao")
+    if (lower.includes('video') || lower.includes('वीडियो')) {
+      openDashboard();
+      switchDockTab('video');
+      playDirectVideo();
+      speakText('जी मास्टर! वीडियो प्लेयर ओपन करके वीडियो चला दिया है!');
+      return;
+    }
+
+    // 4. REGULAR AI QUERY OR "KUCH BANAO" COMMAND
+    if (state.currentScreen === 'hub') {
+      handleHubPrompt(text);
+    } else {
+      handleSendPrompt(text);
+    }
+  }
+
+  // Update Hub Dialogue Card
+  function updateHubDialogue(userMsg, aiMsg) {
+    DOM.dialogueContent.innerHTML = `
+      <p style="color: #38bdf8; margin-bottom: 6px;"><strong>${escapeHtml(userMsg)}</strong></p>
+      <p style="color: #f1f5f9; line-height: 1.6;">${formatChatMarkdown(aiMsg)}</p>
+    `;
   }
 
   // ========================================================
-  // 3. AI CHAT STUDIO & "JO MAI BOLU VO BAN JAYE" ENGINE
+  // 5. AI GENERATIVE STUDIO ("जो बोलें वो तुरंत बन जाए")
   // ========================================================
+
+  async function handleHubPrompt(text) {
+    if (!text || !text.trim()) return;
+
+    DOM.hubTextInput.value = '';
+    DOM.dialogueState.textContent = 'Thinking & Generating... (सोच रही हूँ)';
+    updateHubDialogue(`Master: "${text}"`, 'AAIRA soch rahi hai aur kaam kar rahi hai... ⚡');
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          history: state.chatHistory.slice(-6)
+        })
+      });
+
+      const data = await res.json();
+
+      if (data && data.success) {
+        state.chatHistory.push({ role: 'user', content: text });
+        state.chatHistory.push({ role: 'assistant', content: data.reply });
+
+        updateHubDialogue(`Master: "${text}"`, data.reply);
+
+        // If Code is generated! ("cod aana chahiye")
+        if (data.hasCode && data.code) {
+          state.currentCreationCode = data.code;
+          state.currentCreationTitle = data.title || text.slice(0, 25);
+
+          // Show Notification Card on Hub
+          DOM.hubCodeTitle.textContent = state.currentCreationTitle;
+          DOM.hubCodeNotification.classList.remove('hidden');
+
+          // Load into Sandbox
+          loadIntoSandbox(data.code, state.currentCreationTitle);
+
+          speakText(`जी मास्टर विहुहुहु, मैंने ${state.currentCreationTitle} का कोड तैयार कर दिया है! आप डैशबोर्ड में जाकर इसे लाइव खेल सकते हैं।`);
+        } else {
+          speakText(data.reply);
+        }
+
+      } else {
+        updateHubDialogue(`Master: "${text}"`, data.error || 'Samasya aayi. Kripya punah prayas karein.');
+      }
+    } catch (err) {
+      updateHubDialogue(`Master: "${text}"`, 'Connection error: ' + err.message);
+    }
+  }
 
   async function handleSendPrompt(customText = null) {
     const text = (customText !== null ? customText : DOM.promptInput.value).trim();
     if (!text) return;
 
-    // Reset input
     DOM.promptInput.value = '';
     DOM.promptInput.style.height = 'auto';
 
-    // Append User Message to UI
     appendUserMessage(text);
     state.chatHistory.push({ role: 'user', content: text });
 
-    // Show AAIRA Typing Indicator
     const typingMsgElem = appendTypingIndicator();
     scrollToBottom();
 
@@ -479,10 +631,9 @@
         const reply = data.reply;
         state.chatHistory.push({ role: 'assistant', content: reply });
 
-        // Render Assistant Bubble
         appendAssistantMessage(reply, data.code, data.title);
 
-        // Auto-Run in Live Sandbox if code is generated!
+        // Auto-run in Sandbox if code is generated!
         if (data.hasCode && data.code) {
           state.currentCreationCode = data.code;
           state.currentCreationTitle = data.title || text.slice(0, 25);
@@ -490,12 +641,7 @@
           switchDockTab('sandbox');
         }
 
-        // Voice TTS
-        if (state.ttsEnabled) {
-          // Clean code blocks before speaking
-          const speakable = reply.replace(/```[\s\S]*?```/g, 'Code ban gaya hai Master, aap live sandbox me dekh sakte hain.').slice(0, 200);
-          speakReply(speakable);
-        }
+        speakText(reply);
 
       } else {
         appendAssistantMessage(data.error || 'Samasya aayi. Kripya punah prayas karein.');
@@ -547,10 +693,8 @@
     const div = document.createElement('div');
     div.className = 'chat-message assistant-message';
 
-    // Format text and detect code blocks
     let formattedHtml = formatChatMarkdown(rawText);
 
-    // If code exists, add interactive Action Bar
     let actionBoxHtml = '';
     if (code) {
       actionBoxHtml = `
@@ -587,7 +731,6 @@
 
     DOM.chatContainer.appendChild(div);
 
-    // Attach click handlers to Run and Save buttons
     const runBtn = div.querySelector('.action-run-btn');
     if (runBtn) {
       runBtn.addEventListener('click', () => {
@@ -614,15 +757,12 @@
     if (!text) return '';
     let parsed = text;
 
-    // Convert bold **text**
     parsed = parsed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-    // Code blocks ```html ... ``` or ``` ... ```
     parsed = parsed.replace(/```([a-z0-9]*)\s*([\s\S]*?)\s*```/gi, (match, lang, codeBody) => {
       return `<pre style="background: rgba(0,0,0,0.6); padding: 10px; border-radius: 6px; overflow-x: auto; font-family: monospace; font-size: 11px; margin: 8px 0; border: 1px solid rgba(0,240,255,0.2);"><code>${escapeHtml(codeBody)}</code></pre>`;
     });
 
-    // Paragraphs / Linebreaks
     parsed = parsed.replace(/\n\n/g, '<br><br>');
     parsed = parsed.replace(/\n/g, '<br>');
 
@@ -649,94 +789,7 @@
   }
 
   // ========================================================
-  // 4. MULTIMODAL VOICE SPEECH RECOGNITION & TTS
-  // ========================================================
-
-  let speechRecognizer = null;
-
-  function initSpeechRecognition() {
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRec) {
-      console.warn('[Voice] Speech Recognition not supported in this browser');
-      DOM.micBtn.style.display = 'none';
-      return;
-    }
-
-    speechRecognizer = new SpeechRec();
-    speechRecognizer.continuous = false;
-    speechRecognizer.interimResults = false;
-    speechRecognizer.lang = 'hi-IN'; // Natural Hindi / Hinglish
-
-    speechRecognizer.onstart = () => {
-      state.isListening = true;
-      DOM.micBtn.classList.add('listening');
-      DOM.voiceStatusBar.classList.remove('hidden');
-      DOM.voiceStatusText.textContent = 'Listening to Master Vihuhuhu... (बोलिए)';
-      playAudioTone(880, 0.08);
-    };
-
-    speechRecognizer.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      DOM.promptInput.value = transcript;
-      DOM.voiceStatusText.textContent = `Aapne bola: "${transcript}"`;
-      setTimeout(() => {
-        handleSendPrompt(transcript);
-      }, 400);
-    };
-
-    speechRecognizer.onerror = (err) => {
-      console.warn('[Voice Rec Error]', err);
-      stopListening();
-    };
-
-    speechRecognizer.onend = () => {
-      stopListening();
-    };
-  }
-
-  function toggleSpeechListening() {
-    if (!speechRecognizer) {
-      initSpeechRecognition();
-      if (!speechRecognizer) {
-        alert('Aapke browser me speech recognition support nahi hai.');
-        return;
-      }
-    }
-
-    if (state.isListening) {
-      speechRecognizer.stop();
-    } else {
-      try {
-        speechRecognizer.start();
-      } catch (_) {}
-    }
-  }
-
-  function stopListening() {
-    state.isListening = false;
-    DOM.micBtn.classList.remove('listening');
-    DOM.voiceStatusBar.classList.add('hidden');
-  }
-
-  function speakReply(text) {
-    if (!state.ttsEnabled || !window.speechSynthesis) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.05;
-      utterance.pitch = 1.1; // Female sweet tone
-
-      // Pick Hindi or Indian English voice if available
-      const voices = window.speechSynthesis.getVoices();
-      const hindiVoice = voices.find(v => v.lang.startsWith('hi') || v.name.includes('India') || v.name.includes('Hindi'));
-      if (hindiVoice) utterance.voice = hindiVoice;
-
-      window.speechSynthesis.speak(utterance);
-    } catch (_) {}
-  }
-
-  // ========================================================
-  // 5. LIVE CODE SANDBOX RUNNER
+  // 6. LIVE CODE SANDBOX RUNNER
   // ========================================================
 
   function loadIntoSandbox(code, title = 'Interactive App') {
@@ -766,7 +819,6 @@
     }
   }
 
-  // Demo Cyber Tic-Tac-Toe
   function loadDemoApp() {
     const demoCode = `<!DOCTYPE html>
 <html>
@@ -779,7 +831,7 @@
     margin: 0;
     background: #070913;
     color: #00f0ff;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -897,7 +949,7 @@
   }
 
   // ========================================================
-  // 6. INTEGRATED MUSIC PLAYER & AUDIO SPECTRUM VISUALIZER
+  // 7. INTEGRATED MUSIC PLAYER & AUDIO SPECTRUM VISUALIZER
   // ========================================================
 
   let audioCtx = null;
@@ -909,7 +961,6 @@
     renderPlaylist();
     loadTrack(0);
 
-    // Audio Player Events
     DOM.mainAudioPlayer.addEventListener('timeupdate', updateAudioProgress);
     DOM.mainAudioPlayer.addEventListener('ended', playNextTrack);
     DOM.mainAudioPlayer.addEventListener('play', () => {
@@ -924,14 +975,12 @@
       DOM.vinylRecord.classList.remove('spinning');
     });
 
-    // Seek slider
     DOM.seekSlider.addEventListener('input', (e) => {
       if (DOM.mainAudioPlayer.duration) {
         DOM.mainAudioPlayer.currentTime = (e.target.value / 100) * DOM.mainAudioPlayer.duration;
       }
     });
 
-    // Volume slider
     DOM.volumeSlider.addEventListener('input', (e) => {
       DOM.mainAudioPlayer.volume = parseFloat(e.target.value);
     });
@@ -1023,7 +1072,6 @@
       audioAnalyser = audioCtx.createAnalyser();
       audioAnalyser.fftSize = 64;
 
-      // Note: createMediaElementSource requires CORS headers on audio stream
       try {
         audioSourceNode = audioCtx.createMediaElementSource(DOM.mainAudioPlayer);
         audioSourceNode.connect(audioAnalyser);
@@ -1056,13 +1104,11 @@
       if (audioAnalyser) {
         audioAnalyser.getByteFrequencyData(dataArray);
       } else {
-        // Simulated rhythmic bounce if audio is restricted
         for (let i = 0; i < 32; i++) {
           dataArray[i] = 80 + Math.sin(Date.now() * 0.005 + i) * 60;
         }
       }
 
-      // Draw Main Visualizer
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const barWidth = (canvas.width / 32) * 1.5;
       let x = 0;
@@ -1079,7 +1125,6 @@
         x += barWidth;
       }
 
-      // Draw Mini Nav Visualizer
       if (navCtx) {
         navCtx.clearRect(0, 0, navCanvas.width, navCanvas.height);
         const miniW = navCanvas.width / 12;
@@ -1095,7 +1140,7 @@
   }
 
   // ========================================================
-  // 7. INTEGRATED VIDEO PLAYER ("vahi dashbord pe chale video bhi")
+  // 8. 100% RELIABLE VIDEO PLAYER ("video nhi chal rha tha" FIX)
   // ========================================================
 
   function initVideoPlayer() {
@@ -1112,6 +1157,12 @@
       });
     });
 
+    if (DOM.videoPlayDirectBtn) {
+      DOM.videoPlayDirectBtn.addEventListener('click', () => {
+        playDirectVideo();
+      });
+    }
+
     DOM.videoFullscreenBtn.addEventListener('click', () => {
       const wrap = document.querySelector('.video-screen-wrap');
       if (!document.fullscreenElement) {
@@ -1125,10 +1176,9 @@
       const url = DOM.customVideoUrl.value.trim();
       if (!url) return;
 
-      // Detect YouTube URL
       const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
       if (ytMatch && ytMatch[1]) {
-        const embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`;
+        const embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=0`;
         loadVideo('youtube', embedUrl, 'Custom YouTube Stream');
       } else {
         loadVideo('direct', url, 'Custom Video Stream');
@@ -1136,7 +1186,19 @@
     });
   }
 
-  function loadVideo(type, src, title = 'Video Player') {
+  function playDirectVideo() {
+    DOM.youtubeVideoFrame.classList.add('hidden');
+    DOM.dashboardVideo.classList.remove('hidden');
+    DOM.dashboardVideo.play().then(() => {
+      if (DOM.videoPlayDirectBtn) DOM.videoPlayDirectBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+    }).catch(e => {
+      console.warn('[Video Play failed - attempting muted play]', e);
+      DOM.dashboardVideo.muted = true;
+      DOM.dashboardVideo.play();
+    });
+  }
+
+  function loadVideo(type, src, title = 'Video Stream') {
     DOM.currentVideoTitle.textContent = title;
 
     if (type === 'youtube') {
@@ -1144,17 +1206,25 @@
       DOM.dashboardVideo.classList.add('hidden');
       DOM.youtubeVideoFrame.classList.remove('hidden');
       DOM.youtubeVideoFrame.src = src;
+      if (DOM.videoPlayDirectBtn) DOM.videoPlayDirectBtn.style.display = 'none';
     } else {
       DOM.youtubeVideoFrame.src = '';
       DOM.youtubeVideoFrame.classList.add('hidden');
       DOM.dashboardVideo.classList.remove('hidden');
       DOM.dashboardVideo.src = src;
-      DOM.dashboardVideo.play().catch(() => {});
+      DOM.dashboardVideo.load();
+      if (DOM.videoPlayDirectBtn) DOM.videoPlayDirectBtn.style.display = 'block';
+
+      // Play video with audio, fallback to muted if browser blocks
+      DOM.dashboardVideo.play().catch(() => {
+        DOM.dashboardVideo.muted = true;
+        DOM.dashboardVideo.play().catch(() => {});
+      });
     }
   }
 
   // ========================================================
-  // 8. CREATIONS VAULT (TURSO CLOUD DB)
+  // 9. CREATIONS VAULT (TURSO CLOUD DB)
   // ========================================================
 
   async function loadCreationsVault() {
@@ -1209,7 +1279,7 @@
   }
 
   // ========================================================
-  // 9. DOCK TABS & EVENT LISTENERS
+  // 10. DOCK TABS & EVENT LISTENERS
   // ========================================================
 
   function switchDockTab(tabName) {
@@ -1234,28 +1304,56 @@
       loadCreationsVault();
     }
 
-    // Handle mobile panel open
     if (window.innerWidth <= 960) {
       DOM.mediaDock.classList.add('mobile-open');
     }
   }
 
   function setupEventListeners() {
-    // Screen 1: Orb tap & Key Authorization
-    DOM.orbCenterBtn.addEventListener('click', handleOrbClick);
-    DOM.unlockBtn.addEventListener('click', verifyAndUnlock);
-    DOM.keyInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') verifyAndUnlock();
+    // Screen 1: Voice Hub
+    DOM.hubOrbCore.addEventListener('click', toggleListening);
+    DOM.hubMicBtn.addEventListener('click', toggleListening);
+
+    DOM.hubSendBtn.addEventListener('click', () => {
+      const val = DOM.hubTextInput.value.trim();
+      if (val) handleVoiceInput(val);
     });
-    DOM.copyKeyBtn.addEventListener('click', () => {
-      if (state.generatedKey) {
-        navigator.clipboard.writeText(state.generatedKey);
-        showAuthMessage(`Key ${state.generatedKey} copied to clipboard!`, 'success');
+
+    DOM.hubTextInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const val = DOM.hubTextInput.value.trim();
+        if (val) handleVoiceInput(val);
       }
     });
 
+    // Auto-Listen Switch
+    DOM.autoListenToggle.addEventListener('click', () => {
+      state.autoListen = !state.autoListen;
+      DOM.autoListenToggle.classList.toggle('active', state.autoListen);
+      DOM.autoListenToggle.innerHTML = state.autoListen
+        ? '<i class="fa-solid fa-ear-listen"></i> <span>AUTO-LISTEN: ON</span>'
+        : '<i class="fa-solid fa-ear-deaf"></i> <span>AUTO-LISTEN: OFF</span>';
+    });
+
+    // Hub Go to Dashboard
+    DOM.hubGoDashboardBtn.addEventListener('click', () => openDashboard());
+    DOM.hubRunInDashBtn.addEventListener('click', () => {
+      openDashboard();
+      switchDockTab('sandbox');
+    });
+
+    // Hub Voice Chips
+    DOM.voiceChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const cmd = chip.getAttribute('data-cmd');
+        DOM.hubTextInput.value = cmd;
+        handleVoiceInput(cmd);
+      });
+    });
+
     // Screen 2: Top Nav buttons
-    DOM.lockSystemBtn.addEventListener('click', lockSystem);
+    DOM.backToHubBtn.addEventListener('click', openVoiceHub);
+
     DOM.ttsToggleBtn.addEventListener('click', () => {
       state.ttsEnabled = !state.ttsEnabled;
       DOM.ttsToggleBtn.classList.toggle('active', state.ttsEnabled);
@@ -1264,6 +1362,7 @@
         : '<i class="fa-solid fa-volume-xmark"></i> <span class="hide-mobile">VOICE OFF</span>';
     });
 
+    DOM.toggleSandboxBtn.addEventListener('click', () => switchDockTab('sandbox'));
     DOM.toggleMusicBtn.addEventListener('click', () => switchDockTab('music'));
     DOM.toggleVideoBtn.addEventListener('click', () => switchDockTab('video'));
     DOM.toggleVaultBtn.addEventListener('click', () => switchDockTab('vault'));
@@ -1295,7 +1394,7 @@
       });
     });
 
-    // Chat prompt input
+    // Dashboard Chat input
     DOM.sendBtn.addEventListener('click', () => handleSendPrompt());
     DOM.promptInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -1304,16 +1403,14 @@
       }
     });
 
-    // Auto-grow textarea
     DOM.promptInput.addEventListener('input', () => {
       DOM.promptInput.style.height = 'auto';
       DOM.promptInput.style.height = Math.min(DOM.promptInput.scrollHeight, 120) + 'px';
     });
 
-    // Mic Voice Recognition
-    DOM.micBtn.addEventListener('click', toggleSpeechListening);
+    DOM.micBtn.addEventListener('click', toggleListening);
 
-    // Quick Prompts Ribbon
+    // Dashboard Quick Prompts Ribbon
     document.querySelectorAll('.quick-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const prompt = chip.getAttribute('data-prompt');
@@ -1345,14 +1442,8 @@
   // ========================================================
   window.addEventListener('DOMContentLoaded', () => {
     initOrbCanvas();
+    initSpeechRecognition();
     setupEventListeners();
-
-    // Check if user already has an active authorized session
-    if (state.authToken) {
-      DOM.authScreen.classList.add('hidden');
-      DOM.dashboardScreen.classList.remove('hidden');
-      initDashboardComponents();
-    }
   });
 
 })();
