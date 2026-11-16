@@ -69,32 +69,39 @@
             <span id="authVoiceHintText">बोलिए: "यह कोड" (या यहाँ टैप करें)</span>
           </div>
         </div>
-
-        <!-- Direct YouTube Floating Stage (On Top of AUI: Plays Song/Video, closes on 'Band karo') -->
-        <div id="youtubeDirectOverlay" class="youtube-direct-overlay hidden">
-          <div class="youtube-direct-card">
-            <div class="youtube-direct-header">
-              <div class="youtube-title-box">
-                <i class="fa-brands fa-youtube" style="color: #ff0033; font-size: 18px;"></i>
-                <span id="youtubeOverlayTitle">YouTube Direct Player</span>
-              </div>
-              <button id="closeYoutubeOverlayBtn" class="youtube-close-btn" title="Band Karein (या बोलिए 'Band karo')">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-            <div class="youtube-iframe-container">
-              <iframe id="directYoutubePlayer" src="" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-            </div>
-            <div class="youtube-direct-hint">
-              <span>बोलिए: <strong>"Band karo"</strong> (यूट्यूब तुरंत बंद हो जाएगा)</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Minimalist Dynamic Subtitle HUD (Appears only when speaking/listening) -->
       <div class="aui-status-stream" id="stageDialogueState">
         STANDBY • TAP CORE TO ACTIVATE
+      </div>
+
+      <!-- Quick Action Pills (Visible when Unlocked) -->
+      <div class="aui-quick-actions hidden" id="auiQuickActions">
+        <button class="quick-pill-btn" id="quickSongBtn"><i class="fa-solid fa-music"></i> 🎵 Song Chalao</button>
+        <button class="quick-pill-btn" id="quickVideoBtn"><i class="fa-brands fa-youtube"></i> 🎬 Video Chalao</button>
+        <button class="quick-pill-btn stop" id="quickStopBtn"><i class="fa-solid fa-stop"></i> 🛑 Band Karo</button>
+      </div>
+    </div>
+
+    <!-- Direct YouTube Floating Stage (On Top of AUI: Plays Song/Video, closes on 'Band karo') -->
+    <div id="youtubeDirectOverlay" class="youtube-direct-overlay hidden">
+      <div class="youtube-direct-card">
+        <div class="youtube-direct-header">
+          <div class="youtube-title-box">
+            <i class="fa-brands fa-youtube" style="color: #ff0033; font-size: 18px;"></i>
+            <span id="youtubeOverlayTitle">YouTube Direct Player</span>
+          </div>
+          <button id="closeYoutubeOverlayBtn" class="youtube-close-btn" title="Band Karein (या बोलिए 'Band karo')">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="youtube-iframe-container">
+          <iframe id="directYoutubePlayer" src="" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        </div>
+        <div class="youtube-direct-hint">
+          <span>बोलिए: <strong>"Band karo"</strong> (यूट्यूब तुरंत बंद हो जाएगा)</span>
+        </div>
       </div>
     </div>
 

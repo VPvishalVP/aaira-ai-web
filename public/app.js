@@ -77,6 +77,12 @@
     youtubeOverlayTitle: document.getElementById('youtubeOverlayTitle'),
     closeYoutubeOverlayBtn: document.getElementById('closeYoutubeOverlayBtn'),
 
+    // AUI Quick Action Buttons
+    auiQuickActions: document.getElementById('auiQuickActions'),
+    quickSongBtn: document.getElementById('quickSongBtn'),
+    quickVideoBtn: document.getElementById('quickVideoBtn'),
+    quickStopBtn: document.getElementById('quickStopBtn'),
+
     // Minimalist Subtitle Stream
     stageDialogueState: document.getElementById('stageDialogueState'),
 
@@ -247,7 +253,39 @@
   // 3. SECRET CENTER-CLICK AUTHORIZATION ENGINE
   // ("ye bas mujhe pata hoga ki bich me click karne pe cod aata hai")
   // ========================================================
+  function primeMobileMedia() {
+    // 1. Web Audio Context Unlock for mobile browsers
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        if (!state.mobileAudioCtx) state.mobileAudioCtx = new AudioCtx();
+        if (state.mobileAudioCtx.state === 'suspended') {
+          state.mobileAudioCtx.resume();
+        }
+      }
+    } catch(_) {}
+
+    // 2. HTML5 Audio Unlock
+    try {
+      const silent = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+      silent.play().catch(() => {});
+    } catch(_) {}
+
+    // 3. Trigger native Android Chrome mic permission on user gesture!
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then((stream) => {
+          stream.getTracks().forEach(track => track.stop());
+        })
+        .catch((err) => {
+          console.warn('[Mic Permission Gesture]', err);
+        });
+    }
+  }
+
   function handleMainOrbClick() {
+    primeMobileMedia();
+
     if (!state.unlocked) {
       // Secret Master Authorization Trigger!
       generateSecretAuthCode();
@@ -274,7 +312,7 @@
     const promptMsg = `मास्टर, ऑथराइजेशन कोड है: <strong>${code}</strong>। कृपया कोड बोलिए या इस पर टैप करें।`;
     updateDialogue("Authorization Triggered", promptMsg);
 
-    // Announce code via sweet voice & activate listening
+    // Announce code via sweet neural studio voice & activate listening
     speakText(`मास्टर, ऑथराइजेशन कोड है ${code[0]} ${code[1]} ${code[2]}। कृपया कोड बोलिए।`, () => {
       startListening();
     });
@@ -322,10 +360,19 @@
     // Trigger Fullscreen Cinematic Warp Unlock Blast
     triggerWarpUnlockBlast(() => {
       DOM.authCodeBadge.classList.add('hidden');
-      DOM.statusDot.classList.remove('standby');
-      DOM.statusDot.classList.add('online');
-      DOM.systemStatusLabel.textContent = 'ONLINE • 24/7 VOICE COMMANDS ACTIVE • MASTER VIHUHUHU';
-      DOM.stageLockIcon.className = 'fa-solid fa-lock-open';
+      if (DOM.statusDot) {
+        DOM.statusDot.classList.remove('standby');
+        DOM.statusDot.classList.add('online');
+      }
+      if (DOM.systemStatusLabel) {
+        DOM.systemStatusLabel.textContent = 'ONLINE • 24/7 VOICE COMMANDS ACTIVE • MASTER VIHUHUHU';
+      }
+      if (DOM.stageLockIcon) {
+        DOM.stageLockIcon.className = 'fa-solid fa-lock-open';
+      }
+      if (DOM.auiQuickActions) {
+        DOM.auiQuickActions.classList.remove('hidden');
+      }
 
       playUnlockChord();
 
@@ -339,6 +386,9 @@
     state.unlocked = false;
     state.activeAuthCode = null;
     DOM.authCodeBadge.classList.add('hidden');
+    if (DOM.auiQuickActions) {
+      DOM.auiQuickActions.classList.add('hidden');
+    }
     if (DOM.statusDot) {
       DOM.statusDot.classList.remove('online');
       DOM.statusDot.classList.add('standby');
@@ -473,88 +523,15 @@
 
 
   // ========================================================
-  // 5. SUPERIOR NATURAL FEMALE VOICE TTS & PROFILES
-  // ========================================================
-  function loadBestVoice() {
-    if (!window.speechSynthesis) return;
-    const voices = window.speechSynthesis.getVoices();
-    if (!voices || voices.length === 0) return;
-
-    const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
-    let matched = null;
-
-    if (profile.lang === 'hi') {
-      matched =
-        voices.find(v => v.lang.startsWith('hi') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Online') || v.name.includes('Swara') || v.name.includes('Heera'))) ||
-        voices.find(v => v.lang.startsWith('hi')) ||
-        voices.find(v => v.lang.includes('IN') && (v.name.includes('Female') || v.name.includes('Natural') || v.name.includes('Google'))) ||
-        voices.find(v => v.lang.includes('IN'));
-    } else {
-      matched =
-        voices.find(v => (v.name.includes('Natural') || v.name.includes('Online') || v.name.includes('Google') || v.name.includes('Neural')) && (v.lang.startsWith('en') || v.lang.includes('IN'))) ||
-        voices.find(v => v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Zira') || v.name.includes('Female')) ||
-        voices.find(v => v.lang.startsWith('en'));
-    }
-
-    state.bestVoice = matched || voices.find(v => v.lang.startsWith('hi')) || voices[0];
-  }
-
-  if (window.speechSynthesis) {
-    window.speechSynthesis.onvoiceschanged = loadBestVoice;
-    loadBestVoice();
-  }
-
-  function cycleVoiceProfile() {
-    state.voiceProfileIndex = (state.voiceProfileIndex + 1) % VOICE_PROFILES.length;
-    const current = VOICE_PROFILES[state.voiceProfileIndex];
-    if (DOM.voiceProfileLabel) {
-      DOM.voiceProfileLabel.textContent = `Voice: ${current.label}`;
-    }
-    loadBestVoice();
-    playTone(920, 0.12, 'sine', 0.2);
-    speakText(`जी मास्टर विहुहुहु, मैंने आवाज़ बदल दी है। अब यह ${current.label} मोड है।`);
-  }
-
-  // ========================================================
   // 5. STUDIO QUALITY NEURAL AUDIO TTS & VOICE PROFILES
-  // (Pure Studio Neural Voice, NOT robotic keyboard reader!)
+  // (Pure Sweet Studio Neural Voice from /api/tts - NO robotic keyboard voice!)
   // ========================================================
-  function loadBestVoice() {
-    if (!window.speechSynthesis) return;
-    const voices = window.speechSynthesis.getVoices();
-    if (!voices || voices.length === 0) return;
-
-    const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
-    let matched = null;
-
-    if (profile.lang === 'hi') {
-      matched =
-        voices.find(v => v.lang.startsWith('hi') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Online') || v.name.includes('Swara') || v.name.includes('Heera'))) ||
-        voices.find(v => v.lang.startsWith('hi')) ||
-        voices.find(v => v.lang.includes('IN') && (v.name.includes('Female') || v.name.includes('Natural') || v.name.includes('Google'))) ||
-        voices.find(v => v.lang.includes('IN'));
-    } else {
-      matched =
-        voices.find(v => (v.name.includes('Natural') || v.name.includes('Online') || v.name.includes('Google') || v.name.includes('Neural')) && (v.lang.startsWith('en') || v.lang.includes('IN'))) ||
-        voices.find(v => v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Zira') || v.name.includes('Female')) ||
-        voices.find(v => v.lang.startsWith('en'));
-    }
-
-    state.bestVoice = matched || voices.find(v => v.lang.startsWith('hi')) || voices[0];
-  }
-
-  if (window.speechSynthesis) {
-    window.speechSynthesis.onvoiceschanged = loadBestVoice;
-    loadBestVoice();
-  }
-
   function cycleVoiceProfile() {
     state.voiceProfileIndex = (state.voiceProfileIndex + 1) % VOICE_PROFILES.length;
     const current = VOICE_PROFILES[state.voiceProfileIndex];
     if (DOM.voiceProfileLabel) {
       DOM.voiceProfileLabel.textContent = `Voice: ${current.label}`;
     }
-    loadBestVoice();
     playTone(920, 0.12, 'sine', 0.2);
     speakText(`जी मास्टर विहुहुहु, मैंने आवाज़ बदल दी है। अब यह ${current.label} मोड है।`);
   }
@@ -574,10 +551,6 @@
       state.currentAudioTTS = null;
     }
 
-    if (window.speechSynthesis) {
-      try { window.speechSynthesis.cancel(); } catch(_) {}
-    }
-
     try {
       let clean = rawText
         .replace(/```[\s\S]*?```/g, 'मैंने इसका पूरा कोड तैयार कर दिया है। आप इसे लाइव चला सकते हैं।')
@@ -594,17 +567,24 @@
 
       state.isSpeaking = true;
       DOM.mainOrbBtn.classList.add('speaking');
-      DOM.stageDialogueState.textContent = 'Speaking... (बोल रही हूँ)';
+      if (DOM.stageDialogueState) {
+        DOM.stageDialogueState.textContent = 'Speaking... (बोल रही हूँ)';
+      }
 
       // Pause mic while speaking so AI does not hear her own voice
       if (speechRecognizer) {
         try { speechRecognizer.stop(); } catch(_) {}
       }
 
+      let finished = false;
       const onFinish = () => {
+        if (finished) return;
+        finished = true;
         state.isSpeaking = false;
         DOM.mainOrbBtn.classList.remove('speaking');
-        DOM.stageDialogueState.textContent = '🟢 24/7 Mic Active • मास्टर, जो बोलेंगे वो काम होगा';
+        if (DOM.stageDialogueState) {
+          DOM.stageDialogueState.textContent = '🟢 24/7 Mic Active • मास्टर, जो बोलेंगे वो काम होगा';
+        }
 
         if (onDone) onDone();
 
@@ -612,66 +592,59 @@
         if (state.unlocked && state.is24x7Active) {
           setTimeout(() => {
             if (!state.isSpeaking) startListening();
-          }, 200);
+          }, 250);
         }
       };
 
-      // 1. Studio-Quality Neural Audio Stream from /api/tts (Crystal clear sweet female tone)
-      const audioUrl = `/api/tts?text=${encodeURIComponent(clean)}&lang=hi`;
+      // 1. Studio-Quality Neural Audio Stream from /api/tts (ONLY sweet studio neural voice!)
+      const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
+      const lang = profile.lang || 'hi';
+      const audioUrl = `/api/tts?text=${encodeURIComponent(clean)}&lang=${encodeURIComponent(lang)}`;
       const audio = new Audio(audioUrl);
       state.currentAudioTTS = audio;
 
       audio.onended = onFinish;
       audio.onerror = () => {
-        fallbackWebSpeech(clean, onFinish);
+        console.warn('[Audio TTS playback error]');
+        onFinish();
       };
 
       const playPromise = audio.play();
       if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          fallbackWebSpeech(clean, onFinish);
+        playPromise.catch((err) => {
+          console.warn('[Audio TTS play promise error]', err);
+          onFinish();
         });
       }
     } catch (_) {
-      fallbackWebSpeech(rawText, onDone);
-    }
-  }
-
-  function fallbackWebSpeech(cleanText, onFinish) {
-    if (!window.speechSynthesis) {
-      if (onFinish) onFinish();
-      return;
-    }
-    try {
-      const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      if (state.bestVoice) utterance.voice = state.bestVoice;
-      utterance.rate = profile.rate || 0.95;
-      utterance.pitch = profile.pitch || 1.08;
-
-      utterance.onend = onFinish;
-      utterance.onerror = onFinish;
-
-      window.speechSynthesis.speak(utterance);
-    } catch(_) {
-      if (onFinish) onFinish();
+      if (onDone) onDone();
     }
   }
 
   // ========================================================
-  // 6. 24/7 HANDS-FREE AMBIENT SPEECH RECOGNITION (NO KEYBOARD MIC)
+  // 6. 24/7 HANDS-FREE AMBIENT SPEECH RECOGNITION (MOBILE OPTIMIZED)
   // ========================================================
   let speechRecognizer = null;
 
   function initSpeechRecognition() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
-      console.warn('[Voice] Speech Recognition not supported');
+      console.warn('[Voice] Speech Recognition not supported in this browser');
+      if (DOM.stageDialogueState) {
+        DOM.stageDialogueState.textContent = '⚠️ Chrome Browser Recommended for Voice';
+      }
       return;
     }
 
+    try {
+      if (speechRecognizer) {
+        try { speechRecognizer.abort(); } catch(_) {}
+      }
+    } catch(_) {}
+
     speechRecognizer = new SpeechRec();
-    speechRecognizer.continuous = true; // 24/7 continuous ambient listening!
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    speechRecognizer.continuous = !isMobile;
     speechRecognizer.interimResults = false;
     speechRecognizer.lang = 'hi-IN';
 
@@ -681,7 +654,6 @@
       if (DOM.stageDialogueState) {
         DOM.stageDialogueState.textContent = '🟢 24/7 LISTENING TO MASTER...';
       }
-      // Zero beeps! Completely silent & natural
     };
 
     speechRecognizer.onresult = (event) => {
@@ -706,6 +678,13 @@
     };
 
     speechRecognizer.onerror = (err) => {
+      console.warn('[SpeechRec error]', err.error);
+      if (err.error === 'not-allowed') {
+        if (DOM.stageDialogueState) {
+          DOM.stageDialogueState.textContent = '⚠️ Mic Permission Denied. कृपया ब्राउज़र में माइक Allow करें।';
+        }
+        return;
+      }
       // Quietly auto-restart on silent pause/timeout in 24/7 mode
       if (state.unlocked && state.is24x7Active && !state.isSpeaking) {
         setTimeout(() => {
@@ -717,7 +696,7 @@
     speechRecognizer.onend = () => {
       state.isListening = false;
       DOM.mainOrbBtn.classList.remove('listening');
-      // 24/7 Ambient Auto-Restart!
+      // 24/7 Ambient Auto-Restart on Mobile/Desktop!
       if (state.unlocked && state.is24x7Active && !state.isSpeaking) {
         setTimeout(() => {
           try { speechRecognizer.start(); } catch(_) {}
@@ -733,9 +712,6 @@
     try {
       if (state.currentAudioTTS) {
         state.currentAudioTTS.pause();
-      }
-      if (window.speechSynthesis && window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
       }
       speechRecognizer.start();
     } catch (_) {}
@@ -1393,6 +1369,34 @@
     // Tapping the Secret Code Badge quick-authorizes as fallback
     if (DOM.authCodeBadge) {
       DOM.authCodeBadge.addEventListener('click', authorizeMaster);
+    }
+
+    // Quick Action Buttons (Under AUI)
+    if (DOM.quickSongBtn) {
+      DOM.quickSongBtn.addEventListener('click', () => {
+        playDirectYouTube('hindi lofi songs chill beats', 'YouTube Music Direct');
+        updateDialogue('Quick Action: Song', 'यूट्यूब पर गाना चालू कर दिया है! 🎶 (बोलिए: "Band karo")');
+        speakText('जी मास्टर, यूट्यूब पर गाना शुरू कर दिया है!');
+      });
+    }
+
+    if (DOM.quickVideoBtn) {
+      DOM.quickVideoBtn.addEventListener('click', () => {
+        playDirectYouTube('cyberpunk anime 4k', 'YouTube Video Direct');
+        updateDialogue('Quick Action: Video', 'यूट्यूब वीडियो शुरू कर दिया है! 🎬 (बोलिए: "Band karo")');
+        speakText('जी मास्टर, यूट्यूब वीडियो शुरू कर दिया है!');
+      });
+    }
+
+    if (DOM.quickStopBtn) {
+      DOM.quickStopBtn.addEventListener('click', () => {
+        stopDirectYouTube();
+        toggleAudioPlay(false);
+        if (DOM.dashboardVideo) DOM.dashboardVideo.pause();
+        closeAllHUDs();
+        updateDialogue('Quick Action: Stop', 'सब बंद कर दिया है। ✨');
+        speakText('सब बंद कर दिया है।');
+      });
     }
 
     // Close Direct YouTube Button
