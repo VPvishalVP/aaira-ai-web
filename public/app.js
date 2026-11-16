@@ -55,16 +55,11 @@
     // Blast Canvas
     unlockBlastCanvas: document.getElementById('unlockBlastCanvas'),
 
-    // Top Navigation HUD
+    // Minimalist Sci-Fi Watermark Status
     statusDot: document.getElementById('statusDot'),
     systemStatusLabel: document.getElementById('systemStatusLabel'),
-    stageLockBtn: document.getElementById('stageLockBtn'),
-    stageLockIcon: document.getElementById('stageLockIcon'),
-    stageTtsToggle: document.getElementById('stageTtsToggle'),
-    voiceProfileBtn: document.getElementById('voiceProfileBtn'),
-    voiceProfileLabel: document.getElementById('voiceProfileLabel'),
 
-    // Center Quantum AI Core
+    // Center Quantum AI Core (AUI)
     mainAIOralCanvas: document.getElementById('mainAIOralCanvas'),
     mainOrbBtn: document.getElementById('mainOrbBtn'),
     aiCoreNucleus: document.getElementById('aiCoreNucleus'),
@@ -82,13 +77,8 @@
     youtubeOverlayTitle: document.getElementById('youtubeOverlayTitle'),
     closeYoutubeOverlayBtn: document.getElementById('closeYoutubeOverlayBtn'),
 
-    // Dialogue Subtitle HUD
+    // Minimalist Subtitle Stream
     stageDialogueState: document.getElementById('stageDialogueState'),
-    stageDialogueBody: document.getElementById('stageDialogueBody'),
-    stageMicBtn: document.getElementById('stageMicBtn'),
-    stageTextInput: document.getElementById('stageTextInput'),
-    stageSendBtn: document.getElementById('stageSendBtn'),
-    voiceCmdChips: document.querySelectorAll('.voice-cmd-chip'),
 
     // Floating Dynamic HUDs (Hidden until voice commanded!)
     musicOverlayHUD: document.getElementById('musicOverlayHUD'),
@@ -349,13 +339,15 @@
     state.unlocked = false;
     state.activeAuthCode = null;
     DOM.authCodeBadge.classList.add('hidden');
-    DOM.statusDot.classList.remove('online');
-    DOM.statusDot.classList.add('standby');
-    DOM.systemStatusLabel.textContent = 'STANDBY • TAP CORE TO AUTHORIZE';
-    DOM.stageLockIcon.className = 'fa-solid fa-lock';
+    if (DOM.statusDot) {
+      DOM.statusDot.classList.remove('online');
+      DOM.statusDot.classList.add('standby');
+    }
+    if (DOM.systemStatusLabel) {
+      DOM.systemStatusLabel.textContent = 'VIHUHUHU • AAIRA AI';
+    }
     closeAllHUDs();
-    updateDialogue("System Standby", "सिस्टम स्टैंडबाय मोड में है। एक्टिवेट करने के लिए क्वांटम कोर के बीच में क्लिक करें।");
-    playTone(440, 0.2);
+    updateDialogue("System Standby", "STANDBY • TAP CORE TO ACTIVATE");
   }
 
   // ========================================================
@@ -686,9 +678,10 @@
     speechRecognizer.onstart = () => {
       state.isListening = true;
       DOM.mainOrbBtn.classList.add('listening');
-      DOM.stageMicBtn.classList.add('listening');
-      DOM.stageDialogueState.textContent = '🟢 24/7 Listening to Master Vihuhuhu... (सुन रही हूँ)';
-      playTone(880, 0.08);
+      if (DOM.stageDialogueState) {
+        DOM.stageDialogueState.textContent = '🟢 24/7 LISTENING TO MASTER...';
+      }
+      // Zero beeps! Completely silent & natural
     };
 
     speechRecognizer.onresult = (event) => {
@@ -698,14 +691,12 @@
       const transcript = last[0].transcript.trim();
       if (!transcript) return;
 
-      DOM.stageTextInput.value = transcript;
-
       if (!state.unlocked) {
         // Voice verification of the secret random code!
         if (verifySpokenAuthCode(transcript)) {
           authorizeMaster();
         } else {
-          const failMsg = `कोड मैच नहीं हुआ। कृपया कोड <strong>${state.activeAuthCode}</strong> बोलिए या ऊपर टैप करें।`;
+          const failMsg = `कोड: [ ${state.activeAuthCode} ] बोलें`;
           updateDialogue(transcript, failMsg);
           speakText(`कोड मैच नहीं हुआ। कृपया कोड बोलिए।`);
         }
@@ -726,7 +717,6 @@
     speechRecognizer.onend = () => {
       state.isListening = false;
       DOM.mainOrbBtn.classList.remove('listening');
-      DOM.stageMicBtn.classList.remove('listening');
       // 24/7 Ambient Auto-Restart!
       if (state.unlocked && state.is24x7Active && !state.isSpeaking) {
         setTimeout(() => {
@@ -754,8 +744,9 @@
   function stopListening() {
     state.isListening = false;
     DOM.mainOrbBtn.classList.remove('listening');
-    DOM.stageMicBtn.classList.remove('listening');
-    DOM.stageDialogueState.textContent = 'Mic Idle • मास्टर, बोलिए...';
+    if (DOM.stageDialogueState) {
+      DOM.stageDialogueState.textContent = state.unlocked ? '🟢 24/7 ACTIVE' : 'STANDBY • TAP CORE TO ACTIVATE';
+    }
   }
 
   function toggleListening() {
@@ -804,7 +795,6 @@
   // ========================================================
   function dispatchVoiceCommand(text) {
     const lower = text.toLowerCase().trim();
-    DOM.stageTextInput.value = '';
 
     // Command 1: STOP / CLOSE COMMAND ("Band karo" / "Roko" / "Stop" / "Hatao")
     if (
@@ -885,21 +875,23 @@
   }
 
   function updateDialogue(userText, aiText) {
-    DOM.stageDialogueBody.innerHTML = `
-      <p style="color: #38bdf8; margin-bottom: 6px;"><strong>Master: "${escapeHtml(userText)}"</strong></p>
-      <p style="color: #f1f5f9; line-height: 1.6;">${formatMarkdown(aiText)}</p>
-    `;
+    if (DOM.stageDialogueState) {
+      const cleanMsg = aiText.replace(/<[^>]+>/g, '').slice(0, 80);
+      DOM.stageDialogueState.textContent = cleanMsg || '🟢 24/7 ACTIVE';
+    }
 
     // Append to dashboard chat log as well
-    const logDiv = document.createElement('div');
-    logDiv.style.borderBottom = '1px solid rgba(255,255,255,0.08)';
-    logDiv.style.paddingBottom = '8px';
-    logDiv.innerHTML = `
-      <div style="color: #38bdf8; font-size: 11px;"><strong>Master:</strong> ${escapeHtml(userText)}</div>
-      <div style="color: #f1f5f9; font-size: 12px; margin-top: 4px;">${formatMarkdown(aiText)}</div>
-    `;
-    DOM.dashChatContainer.appendChild(logDiv);
-    DOM.dashChatContainer.scrollTop = DOM.dashChatContainer.scrollHeight;
+    if (DOM.dashChatContainer) {
+      const logDiv = document.createElement('div');
+      logDiv.style.borderBottom = '1px solid rgba(255,255,255,0.08)';
+      logDiv.style.paddingBottom = '8px';
+      logDiv.innerHTML = `
+        <div style="color: #38bdf8; font-size: 11px;"><strong>Master:</strong> ${escapeHtml(userText)}</div>
+        <div style="color: #f1f5f9; font-size: 12px; margin-top: 4px;">${formatMarkdown(aiText)}</div>
+      `;
+      DOM.dashChatContainer.appendChild(logDiv);
+      DOM.dashChatContainer.scrollTop = DOM.dashChatContainer.scrollHeight;
+    }
   }
 
   async function handleOmnipotentCodeRequest(promptText) {
@@ -1407,70 +1399,6 @@
     if (DOM.closeYoutubeOverlayBtn) {
       DOM.closeYoutubeOverlayBtn.addEventListener('click', stopDirectYouTube);
     }
-
-    // Stage Top Actions
-    DOM.stageLockBtn.addEventListener('click', lockSystem);
-    if (DOM.voiceProfileBtn) {
-      DOM.voiceProfileBtn.addEventListener('click', cycleVoiceProfile);
-    }
-    DOM.stageTtsToggle.addEventListener('click', () => {
-      state.ttsEnabled = !state.ttsEnabled;
-      DOM.stageTtsToggle.classList.toggle('active', state.ttsEnabled);
-      DOM.stageTtsToggle.innerHTML = state.ttsEnabled
-        ? '<i class="fa-solid fa-volume-high"></i> <span class="hide-mobile">VOICE ON</span>'
-        : '<i class="fa-solid fa-volume-xmark"></i> <span class="hide-mobile">VOICE OFF</span>';
-    });
-
-    // Mic button
-    DOM.stageMicBtn.addEventListener('click', () => {
-      if (!state.unlocked) {
-        generateSecretAuthCode();
-      } else {
-        toggleListening();
-      }
-    });
-
-    DOM.stageSendBtn.addEventListener('click', () => {
-      const val = DOM.stageTextInput.value.trim();
-      if (!val) return;
-      if (!state.unlocked) {
-        if (verifySpokenAuthCode(val)) {
-          authorizeMaster();
-        } else {
-          updateDialogue(val, `कोड मैच नहीं हुआ। कृपया कोड <strong>${state.activeAuthCode}</strong> दर्ज करें या बोलें।`);
-        }
-      } else {
-        dispatchVoiceCommand(val);
-      }
-    });
-
-    DOM.stageTextInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const val = DOM.stageTextInput.value.trim();
-        if (!val) return;
-        if (!state.unlocked) {
-          if (verifySpokenAuthCode(val)) {
-            authorizeMaster();
-          } else {
-            updateDialogue(val, `कोड मैच नहीं हुआ। कृपया कोड <strong>${state.activeAuthCode}</strong> दर्ज करें या बोलें।`);
-          }
-        } else {
-          dispatchVoiceCommand(val);
-        }
-      }
-    });
-
-    // Voice Command Chips
-    DOM.voiceCmdChips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        const cmd = chip.getAttribute('data-cmd');
-        if (!state.unlocked) {
-          generateSecretAuthCode();
-        } else {
-          dispatchVoiceCommand(cmd);
-        }
-      });
-    });
 
     // Close HUD Buttons
     DOM.hudCloseBtns.forEach(btn => {
