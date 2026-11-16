@@ -587,10 +587,16 @@
     CRYSTAL: '3D Quantum Diamond',
     VORTEX: '3D Cosmic Singularity',
     DNA: '3D Cyber Helix',
-    HEART: '3D Companion Core'
+    HEART: '3D Companion Core',
+    PYRAMID: '3D Cyber Pyramid',
+    STAR: '3D Cosmic Star',
+    SATURN: '3D Saturn Ring World',
+    INFINITY: '3D Quantum Infinity',
+    FLOWER: '3D Neon Lotus',
+    CYLINDER: '3D Energy Pillar'
   };
 
-  const SHAPE_KEYS = ['SPHERE', 'CUBE', 'TORUS', 'CRYSTAL', 'VORTEX', 'DNA', 'HEART'];
+  const SHAPE_KEYS = ['SPHERE', 'CUBE', 'TORUS', 'CRYSTAL', 'VORTEX', 'DNA', 'HEART', 'PYRAMID', 'STAR', 'SATURN', 'INFINITY', 'FLOWER', 'CYLINDER'];
   let currentShapeIndex = 0;
 
   // 3D Parametric Generators
@@ -714,6 +720,129 @@
       arr[i * 3] = x;
       arr[i * 3 + 1] = y;
       arr[i * 3 + 2] = z;
+    }
+    return arr;
+  }
+
+  function generatePyramidTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    const H = 140;
+    const B = 70;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const r = Math.random();
+      if (r < 0.82) {
+        // 4 lateral triangular faces
+        const face = Math.floor(Math.random() * 4);
+        const h = Math.random(); // 0 is base, 1 is peak
+        const w = (Math.random() - 0.5) * 2 * (1 - h) * B;
+        const y = -H * 0.42 + h * H;
+        const depth = (1 - h) * B;
+        let x = 0, z = 0;
+        if (face === 0) { x = w; z = depth; }
+        else if (face === 1) { x = w; z = -depth; }
+        else if (face === 2) { x = depth; z = w; }
+        else { x = -depth; z = w; }
+        arr[i * 3] = x + (Math.random() - 0.5) * 3;
+        arr[i * 3 + 1] = y + (Math.random() - 0.5) * 3;
+        arr[i * 3 + 2] = z + (Math.random() - 0.5) * 3;
+      } else {
+        // Square base
+        arr[i * 3] = (Math.random() - 0.5) * 2 * B;
+        arr[i * 3 + 1] = -H * 0.42;
+        arr[i * 3 + 2] = (Math.random() - 0.5) * 2 * B;
+      }
+    }
+    return arr;
+  }
+
+  function generateStarTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    const R_outer = 95;
+    const R_inner = 38;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const mod = Math.cos(5 * angle);
+      const rBase = R_inner + (R_outer - R_inner) * (mod * 0.5 + 0.5);
+      const r = rBase * Math.sqrt(Math.random());
+      const zThickness = (1 - r / R_outer) * 36;
+      arr[i * 3] = Math.cos(angle) * r;
+      arr[i * 3 + 1] = Math.sin(angle) * r;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 2 * zThickness;
+    }
+    return arr;
+  }
+
+  function generateSaturnTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      if (i < PARTICLE_COUNT * 0.45) {
+        // Central planetary sphere
+        const u = Math.random();
+        const v = Math.random();
+        const theta = u * 2.0 * Math.PI;
+        const phi = Math.acos(2.0 * v - 1.0);
+        const r = 38 + (Math.random() - 0.5) * 3;
+        arr[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        arr[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        arr[i * 3 + 2] = r * Math.cos(phi);
+      } else {
+        // Planetary rings (tilted disk)
+        const angle = Math.random() * Math.PI * 2;
+        const ringR = 56 + Math.random() * 58;
+        const tilt = 0.45;
+        const x = Math.cos(angle) * ringR;
+        const y = (Math.random() - 0.5) * 5;
+        const z = Math.sin(angle) * ringR;
+        arr[i * 3] = x;
+        arr[i * 3 + 1] = y * Math.cos(tilt) - z * Math.sin(tilt);
+        arr[i * 3 + 2] = y * Math.sin(tilt) + z * Math.cos(tilt);
+      }
+    }
+    return arr;
+  }
+
+  function generateInfinityTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    const a = 90;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const t = Math.random() * Math.PI * 2;
+      const denom = 1 + Math.sin(t) * Math.sin(t);
+      const x = (a * Math.SQRT2 * Math.cos(t)) / denom;
+      const y = (a * Math.SQRT2 * Math.sin(t) * Math.cos(t)) / denom;
+      const tubeR = 12 * Math.random();
+      const tubeAngle = Math.random() * Math.PI * 2;
+      arr[i * 3] = x + Math.cos(tubeAngle) * tubeR;
+      arr[i * 3 + 1] = y + Math.sin(tubeAngle) * tubeR;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 22;
+    }
+    return arr;
+  }
+
+  function generateFlowerTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const t = Math.random() * Math.PI * 2;
+      const petals = Math.abs(Math.cos(3 * t));
+      const r = (25 + 68 * petals) * Math.sqrt(Math.random());
+      const y = -25 + Math.pow(r / 90, 1.8) * 55;
+      arr[i * 3] = Math.cos(t) * r + (Math.random() - 0.5) * 4;
+      arr[i * 3 + 1] = y + (Math.random() - 0.5) * 4;
+      arr[i * 3 + 2] = Math.sin(t) * r + (Math.random() - 0.5) * 4;
+    }
+    return arr;
+  }
+
+  function generateCylinderTargets() {
+    const arr = new Float32Array(PARTICLE_COUNT * 3);
+    const R = 46;
+    const H = 160;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const y = (Math.random() - 0.5) * H;
+      const r = R + (Math.random() - 0.5) * 6;
+      arr[i * 3] = Math.cos(angle) * r;
+      arr[i * 3 + 1] = y;
+      arr[i * 3 + 2] = Math.sin(angle) * r;
     }
     return arr;
   }
@@ -859,20 +988,23 @@
   let auiPos = { x: 0, y: 0 };
   let lastTapTime = 0;
 
+  function isClickInAuiCenter(clientX, clientY) {
+    if (!DOM.mainAIOralCanvas) return false;
+    const rect = DOM.mainAIOralCanvas.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const dist = Math.hypot(clientX - centerX, clientY - centerY);
+    // Center nucleus radius is ~48px (diameter ~96px)
+    return dist <= 48;
+  }
+
   function initAUIPosition() {
     try {
-      const saved = localStorage.getItem('aaira_aui_pos');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
-          auiPos.x = parsed.x;
-          auiPos.y = parsed.y;
-          if (DOM.mainOrbWrapper) {
-            DOM.mainOrbWrapper.style.transform = `translate3d(${auiPos.x}px, ${auiPos.y}px, 0)`;
-          }
-        }
-      }
+      localStorage.removeItem('aaira_aui_pos');
     } catch (_) {}
+    if (DOM.mainOrbWrapper) {
+      DOM.mainOrbWrapper.style.transform = 'translate3d(0px, 0px, 0)';
+    }
   }
 
   function resetAUIPosition() {
@@ -919,25 +1051,12 @@
 
       totalDragDist += Math.abs(dx) + Math.abs(dy);
 
-      // Free-floating drag anywhere on the screen! ("jaha chahu vaha chala jaye")
-      auiPos.x += dx;
-      auiPos.y += dy;
-
-      const maxW = Math.max(100, (window.innerWidth / 2) - 30);
-      const maxH = Math.max(100, (window.innerHeight / 2) - 30);
-      auiPos.x = Math.max(-maxW, Math.min(maxW, auiPos.x));
-      auiPos.y = Math.max(-maxH, Math.min(maxH, auiPos.y));
-
-      if (DOM.mainOrbWrapper) {
-        DOM.mainOrbWrapper.style.transform = `translate3d(${auiPos.x}px, ${auiPos.y}px, 0)`;
-      }
-
-      // Responsive 3D rotation following drag motion
+      // Responsive 360-degree rotational control on all axes ("aui 360 karo")
       if (threeGroup) {
-        threeGroup.rotation.y += dx * 0.008;
-        threeGroup.rotation.x += dy * 0.008;
-        rotSpeedY = dx * 0.004;
-        rotSpeedX = dy * 0.004;
+        threeGroup.rotation.y += dx * 0.013;
+        threeGroup.rotation.x += dy * 0.013;
+        rotSpeedY = dx * 0.009;
+        rotSpeedX = dy * 0.009;
       }
     }
 
@@ -947,23 +1066,12 @@
       if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.remove('is-dragging');
       const duration = Date.now() - touchStartTime;
 
-      const now = Date.now();
-      if (now - lastTapTime < 340 && totalDragDist < 16) {
-        // Double-tap detected: snap smoothly back to center!
-        resetAUIPosition();
-        lastTapTime = 0;
-        return;
-      }
-      lastTapTime = now;
-
-      // If user tapped without dragging (< 14px move & < 350ms): Talk / Voice Call!
-      if (totalDragDist < 14 && duration < 350) {
-        handleMainOrbClick();
-      } else {
-        // Dragged to a new location on the screen: persist position!
-        try {
-          localStorage.setItem('aaira_aui_pos', JSON.stringify(auiPos));
-        } catch (_) {}
+      // Tap ONLY triggers auth code if it was a direct tap (< 8px movement in < 300ms)
+      // AND explicitly within the center nucleus of the AUI!
+      if (totalDragDist < 8 && duration < 300) {
+        if (isClickInAuiCenter(startTouchX, startTouchY)) {
+          handleMainOrbClick();
+        }
       }
     }
 
@@ -1113,11 +1221,11 @@
     let newTarget = null;
     let label = '3D Quantum Sphere';
 
-    if (upper.includes('CUBE') || upper.includes('BOX') || upper.includes('MATRIX') || upper.includes('TESSERACT')) {
+    if (upper.includes('CUBE') || upper.includes('BOX') || upper.includes('MATRIX') || upper.includes('TESSERACT') || upper.includes('DABBA')) {
       newTarget = generateCubeTargets();
       state.auiShape = 'CUBE';
       label = SHAPE_PRESETS.CUBE;
-    } else if (upper.includes('TORUS') || upper.includes('RING') || upper.includes('CHAKRA') || upper.includes('DONUT')) {
+    } else if (upper.includes('TORUS') || upper.includes('RING') || upper.includes('CHAKRA') || upper.includes('DONUT') || upper.includes('CHHALLA')) {
       newTarget = generateTorusTargets();
       state.auiShape = 'TORUS';
       label = SHAPE_PRESETS.TORUS;
@@ -1125,7 +1233,7 @@
       newTarget = generateCrystalTargets();
       state.auiShape = 'CRYSTAL';
       label = SHAPE_PRESETS.CRYSTAL;
-    } else if (upper.includes('VORTEX') || upper.includes('BLACK') || upper.includes('GALAXY') || upper.includes('SINGULARITY')) {
+    } else if (upper.includes('VORTEX') || upper.includes('BLACK') || upper.includes('GALAXY') || upper.includes('SINGULARITY') || upper.includes('TORNADO')) {
       newTarget = generateVortexTargets();
       state.auiShape = 'VORTEX';
       label = SHAPE_PRESETS.VORTEX;
@@ -1133,10 +1241,34 @@
       newTarget = generateDNATargets();
       state.auiShape = 'DNA';
       label = SHAPE_PRESETS.DNA;
-    } else if (upper.includes('HEART') || upper.includes('DIL') || upper.includes('LOVE')) {
+    } else if (upper.includes('HEART') || upper.includes('DIL') || upper.includes('LOVE') || upper.includes('PYAR')) {
       newTarget = generateHeartTargets();
       state.auiShape = 'HEART';
       label = SHAPE_PRESETS.HEART;
+    } else if (upper.includes('PYRAMID') || upper.includes('PIRAMID') || upper.includes('TRIANGLE') || upper.includes('TRIKON')) {
+      newTarget = generatePyramidTargets();
+      state.auiShape = 'PYRAMID';
+      label = SHAPE_PRESETS.PYRAMID;
+    } else if (upper.includes('STAR') || upper.includes('SITARA') || upper.includes('TARA')) {
+      newTarget = generateStarTargets();
+      state.auiShape = 'STAR';
+      label = SHAPE_PRESETS.STAR;
+    } else if (upper.includes('SATURN') || upper.includes('SHANI') || upper.includes('PLANET')) {
+      newTarget = generateSaturnTargets();
+      state.auiShape = 'SATURN';
+      label = SHAPE_PRESETS.SATURN;
+    } else if (upper.includes('INFINITY') || upper.includes('ANANT') || upper.includes('LOOP')) {
+      newTarget = generateInfinityTargets();
+      state.auiShape = 'INFINITY';
+      label = SHAPE_PRESETS.INFINITY;
+    } else if (upper.includes('FLOWER') || upper.includes('LOTUS') || upper.includes('KAMAL') || upper.includes('PHOOL') || upper.includes('ROSE')) {
+      newTarget = generateFlowerTargets();
+      state.auiShape = 'FLOWER';
+      label = SHAPE_PRESETS.FLOWER;
+    } else if (upper.includes('CYLINDER') || upper.includes('PILLAR') || upper.includes('STAMBH')) {
+      newTarget = generateCylinderTargets();
+      state.auiShape = 'CYLINDER';
+      label = SHAPE_PRESETS.CYLINDER;
     } else {
       newTarget = generateSphereTargets();
       state.auiShape = 'SPHERE';
@@ -1513,65 +1645,101 @@
     const lower = text.toLowerCase().trim();
 
     // 1. CUBE / TESSERACT ("Cube banao", "Dabba banao", "Matrix karo")
-    if (lower.includes('cube') || lower.includes('box') || lower.includes('dabba') || lower.includes('matrix') || lower.includes('tesseract') || lower.includes('क्यूब') || lower.includes('डब्बा')) {
+    if (lower.includes('cube') || lower.includes('box') || lower.includes('dabba') || lower.includes('matrix') || lower.includes('tesseract') || lower.includes('क्यूब') || lower.includes('डब्बा') || lower.includes('चौकोर')) {
       morphTo3DShape('CUBE');
       return true;
     }
 
     // 2. SPHERE / BALL / GOLA ("Sphere banao", "Gola banao", "Ball karo")
-    if (lower.includes('sphere') || lower.includes('gola') || lower.includes('round') || lower.includes('ball') || lower.includes('default aui') || lower.includes('गोला')) {
+    if (lower.includes('sphere') || lower.includes('gola') || lower.includes('round') || lower.includes('ball') || lower.includes('default aui') || lower.includes('गोला') || lower.includes('गेंद')) {
       morphTo3DShape('SPHERE');
       return true;
     }
 
     // 3. TORUS / RING / CHAKRA ("Ring banao", "Chakra banao", "Donut karo")
-    if (lower.includes('ring') || lower.includes('chakra') || lower.includes('torus') || lower.includes('donut') || lower.includes('chhalla') || lower.includes('रिंग') || lower.includes('चक्र')) {
+    if (lower.includes('ring') || lower.includes('chakra') || lower.includes('torus') || lower.includes('donut') || lower.includes('chhalla') || lower.includes('रिंग') || lower.includes('चक्र') || lower.includes('छल्ला')) {
       morphTo3DShape('TORUS');
       return true;
     }
 
     // 4. CRYSTAL / DIAMOND / HEERA ("Crystal banao", "Diamond banao", "Heera karo")
-    if (lower.includes('crystal') || lower.includes('diamond') || lower.includes('heera') || lower.includes('gem') || lower.includes('हीरा') || lower.includes('क्रिस्टल')) {
+    if (lower.includes('crystal') || lower.includes('diamond') || lower.includes('heera') || lower.includes('gem') || lower.includes('हीरा') || lower.includes('क्रिस्टल') || lower.includes('कोहिनूर')) {
       morphTo3DShape('CRYSTAL');
       return true;
     }
 
     // 5. BLACK HOLE / VORTEX / GALAXY ("Black hole banao", "Vortex karo", "Galaxy banao")
-    if (lower.includes('black hole') || lower.includes('vortex') || lower.includes('galaxy') || lower.includes('tornado') || lower.includes('bhanwar') || lower.includes('singularity') || lower.includes('ब्लैक होल')) {
+    if (lower.includes('black hole') || lower.includes('vortex') || lower.includes('galaxy') || lower.includes('tornado') || lower.includes('bhanwar') || lower.includes('singularity') || lower.includes('ब्लैक होल') || lower.includes('गैलेक्सी') || lower.includes('आकाशगंगा')) {
       morphTo3DShape('VORTEX');
       return true;
     }
 
     // 6. DNA / HELIX ("DNA banao", "Helix karo", "Spiral banao")
-    if (lower.includes('dna') || lower.includes('helix') || lower.includes('spiral') || lower.includes('tarang') || lower.includes('डीएनए')) {
+    if (lower.includes('dna') || lower.includes('helix') || lower.includes('spiral') || lower.includes('tarang') || lower.includes('डीएनए') || lower.includes('कुंडली')) {
       morphTo3DShape('DNA');
       return true;
     }
 
     // 7. HEART / DIL ("Dil banao", "Heart karo")
-    if (lower.includes('heart') || lower.includes('dil') || lower.includes('love') || lower.includes('दिल')) {
+    if (lower.includes('heart') || lower.includes('dil') || lower.includes('love') || lower.includes('pyar') || lower.includes('दिल') || lower.includes('प्यार')) {
       morphTo3DShape('HEART');
       return true;
     }
 
-    // 8. COLOR SHIFTS
-    if (lower.includes('golden') || lower.includes('gold') || lower.includes('peela') || lower.includes('पीला') || lower.includes('गोल्डन')) {
+    // 8. PYRAMID ("Pyramid banao", "Triangle banao", "Trikon karo")
+    if (lower.includes('pyramid') || lower.includes('piramid') || lower.includes('triangle') || lower.includes('trikon') || lower.includes('पिरामिड') || lower.includes('त्रिकोण')) {
+      morphTo3DShape('PYRAMID');
+      return true;
+    }
+
+    // 9. STAR / SITARA ("Star banao", "Sitara banao", "Tara karo")
+    if (lower.includes('star') || lower.includes('sitara') || lower.includes('tara') || lower.includes('sitaara') || lower.includes('सितारा') || lower.includes('तारा') || lower.includes('स्टार')) {
+      morphTo3DShape('STAR');
+      return true;
+    }
+
+    // 10. SATURN / PLANET ("Saturn banao", "Shani grah", "Planet banao")
+    if (lower.includes('saturn') || lower.includes('shani') || lower.includes('planet') || lower.includes('grah') || lower.includes('शनि') || lower.includes('ग्रह')) {
+      morphTo3DShape('SATURN');
+      return true;
+    }
+
+    // 11. INFINITY ("Infinity banao", "Anant banao", "Loop karo")
+    if (lower.includes('infinity') || lower.includes('anant') || lower.includes('loop') || lower.includes('eight') || lower.includes('अनंत') || lower.includes('इन्फिनिटी')) {
+      morphTo3DShape('INFINITY');
+      return true;
+    }
+
+    // 12. FLOWER / LOTUS ("Lotus banao", "Kamal banao", "Phool banao", "Gulab")
+    if (lower.includes('flower') || lower.includes('lotus') || lower.includes('kamal') || lower.includes('phool') || lower.includes('rose') || lower.includes('कमल') || lower.includes('फूल') || lower.includes('गुलाब')) {
+      morphTo3DShape('FLOWER');
+      return true;
+    }
+
+    // 13. CYLINDER / PILLAR ("Cylinder banao", "Pillar banao", "Stambh karo")
+    if (lower.includes('cylinder') || lower.includes('pillar') || lower.includes('stambh') || lower.includes('khambha') || lower.includes('खंभा') || lower.includes('बेलन')) {
+      morphTo3DShape('CYLINDER');
+      return true;
+    }
+
+    // 14. COLOR SHIFTS
+    if (lower.includes('golden') || lower.includes('gold') || lower.includes('peela') || lower.includes('पीला') || lower.includes('गोल्डन') || lower.includes('सुनहरा')) {
       setAUIColor('#ffd700', 'गोल्डन (Gold)');
       return true;
     }
-    if (lower.includes('green') || lower.includes('hara') || lower.includes('हरा') || lower.includes('ग्रीन')) {
+    if (lower.includes('green') || lower.includes('hara') || lower.includes('हरा') || lower.includes('ग्रीन') || lower.includes('emerald')) {
       setAUIColor('#00ff88', 'एमराल्ड ग्रीन (Green)');
       return true;
     }
-    if (lower.includes('red') || lower.includes('lal') || lower.includes('लाल') || lower.includes('रेड')) {
+    if (lower.includes('red') || lower.includes('lal') || lower.includes('laal') || lower.includes('लाल') || lower.includes('रेड')) {
       setAUIColor('#ff0033', 'रेड अलर्ट (Red)');
       return true;
     }
-    if (lower.includes('pink') || lower.includes('gulabi') || lower.includes('गुलाबी') || lower.includes('पिंक')) {
+    if (lower.includes('pink') || lower.includes('gulabi') || lower.includes('गुलाबी') || lower.includes('पिंक') || lower.includes('rose color')) {
       setAUIColor('#ff007f', 'सिंथवेव पिंक (Pink)');
       return true;
     }
-    if (lower.includes('blue') || lower.includes('neela') || lower.includes('cyan') || lower.includes('नीला') || lower.includes('ब्लू')) {
+    if (lower.includes('blue') || lower.includes('neela') || lower.includes('cyan') || lower.includes('नीला') || lower.includes('ब्लू') || lower.includes('आस्मानी')) {
       setAUIColor('#00f0ff', 'साइबर नियॉन ब्लू (Cyan)');
       return true;
     }
@@ -1579,12 +1747,21 @@
       setAUIColor('#a855f7', 'डीप स्पेस वॉयलेट (Purple)');
       return true;
     }
+    if (lower.includes('white') || lower.includes('safed') || lower.includes('silver') || lower.includes('सफेद') || lower.includes('सिल्वर')) {
+      setAUIColor('#ffffff', 'क्वांटम वाइट (White)');
+      return true;
+    }
+    if (lower.includes('orange') || lower.includes('narangi') || lower.includes('kesariya') || lower.includes('नारंगी') || lower.includes('ऑरेंज')) {
+      setAUIColor('#ff7700', 'सोलर ऑरेंज (Orange)');
+      return true;
+    }
 
-    // 9. CYCLE / ANY MORPH ("AUI badlo", "Shape badlo", "Aisa aui karo", "Vaisa aui karo")
+    // 15. CYCLE / ANY MORPH ("AUI badlo", "Shape badlo", "Aisa aui karo", "Vaisa aui karo", "Jo bolu vaisa aui ban jaye")
     if (
       lower.includes('badlo') || lower.includes('badal') || lower.includes('change') ||
       lower.includes('aisa aui') || lower.includes('vaisa aui') || lower.includes('aaisa') ||
-      lower.includes('roop') || lower.includes('next') || lower.includes('बदलो') || lower.includes('बदल')
+      lower.includes('jo bolu') || lower.includes('roop') || lower.includes('next shape') ||
+      lower.includes('बदलो') || lower.includes('बदल')
     ) {
       cycleNextShape();
       return true;
@@ -2007,67 +2184,8 @@
       return;
     }
 
-    // Command 7: 3D AUI SHAPE MORPH COMMANDS ("Cube karo" / "Sphere karo" / "Ring karo" / "AUI aaisa karo")
-    if (lower.includes('cube') || lower.includes('box banao') || lower.includes('dabba') || lower.includes('matrix cube') || lower.includes('tesseract')) {
-      morphTo3DShape('CUBE');
-      return;
-    }
-    if (lower.includes('sphere') || lower.includes('gola') || lower.includes('round') || lower.includes('ball') || lower.includes('default aui')) {
-      morphTo3DShape('SPHERE');
-      return;
-    }
-    if (lower.includes('ring') || lower.includes('chakra') || lower.includes('torus') || lower.includes('donut')) {
-      morphTo3DShape('TORUS');
-      return;
-    }
-    if (lower.includes('crystal') || lower.includes('diamond') || lower.includes('heera') || lower.includes('gem')) {
-      morphTo3DShape('CRYSTAL');
-      return;
-    }
-    if (lower.includes('black hole') || lower.includes('vortex') || lower.includes('galaxy') || lower.includes('tornado') || lower.includes('singularity')) {
-      morphTo3DShape('VORTEX');
-      return;
-    }
-    if (lower.includes('dna') || lower.includes('helix') || lower.includes('spiral')) {
-      morphTo3DShape('DNA');
-      return;
-    }
-    if (lower.includes('heart') || lower.includes('dil banao') || lower.includes('dil karo')) {
-      morphTo3DShape('HEART');
-      return;
-    }
-    if (
-      lower.includes('aui badlo') || lower.includes('shape badlo') || lower.includes('aui change') ||
-      lower.includes('aui aaisa') || lower.includes('aisa aui') || lower.includes('3d badlo') ||
-      lower.includes('next shape') || lower.includes('shape change')
-    ) {
-      cycleNextShape();
-      return;
-    }
-
-    // Command 8: 3D AUI COLOR SHIFT COMMANDS ("Golden karo" / "Green karo" / "Red karo" / "Blue karo")
-    if (lower.includes('golden') || lower.includes('gold color') || lower.includes('peela')) {
-      setAUIColor('#ffd700', 'गोल्डन (Gold)');
-      return;
-    }
-    if (lower.includes('green') || lower.includes('hara color') || lower.includes('emerald')) {
-      setAUIColor('#00ff88', 'एमराल्ड ग्रीन (Green)');
-      return;
-    }
-    if (lower.includes('red') || lower.includes('lal color') || lower.includes('crimson')) {
-      setAUIColor('#ff0033', 'रेड अलर्ट (Red)');
-      return;
-    }
-    if (lower.includes('pink') || lower.includes('gulabi') || lower.includes('magenta')) {
-      setAUIColor('#ff007f', 'सिंथवेव पिंक (Pink)');
-      return;
-    }
-    if (lower.includes('blue') || lower.includes('neela') || lower.includes('cyan')) {
-      setAUIColor('#00f0ff', 'साइबर नियॉन ब्लू (Cyan)');
-      return;
-    }
-    if (lower.includes('purple') || lower.includes('baingani') || lower.includes('violet')) {
-      setAUIColor('#a855f7', 'डीप स्पेस वॉयलेट (Purple)');
+    // Command 7 & 8: 3D AUI SHAPE MORPH & COLOR COMMANDS ("jo bolu vaisa aui ban jaye")
+    if (checkAndHandleMorphCommand(text)) {
       return;
     }
 
@@ -2621,15 +2739,13 @@
   // 13. EVENT LISTENERS SETUP
   // ========================================================
   function setupEventListeners() {
-    // Secret Center Click on Core: Generates Auth Code when locked, or toggles mic when unlocked
-    if (DOM.mainOrbBtn) {
-      DOM.mainOrbBtn.addEventListener('click', handleMainOrbClick);
-    }
+    // Secret Center Click on Core: Generates Auth Code ONLY when clicking directly in the center nucleus
     if (DOM.mainAIOralCanvas) {
-      DOM.mainAIOralCanvas.addEventListener('click', handleMainOrbClick);
-    }
-    if (DOM.mainOrbWrapper) {
-      DOM.mainOrbWrapper.addEventListener('click', handleMainOrbClick);
+      DOM.mainAIOralCanvas.addEventListener('click', (e) => {
+        if (isClickInAuiCenter(e.clientX, e.clientY)) {
+          handleMainOrbClick();
+        }
+      });
     }
 
     // Tapping the Secret Code Badge quick-authorizes as fallback

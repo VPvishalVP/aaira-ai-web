@@ -336,7 +336,7 @@ Provide an ultra-sharp, insightful, practical, concise research brief in Hindi/H
       }
     ];
 
-    const models = [GROQ_MODEL, 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+    const models = [GROQ_MODEL, 'qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b'].filter((v, i, a) => a.indexOf(v) === i);
     let reply = '';
     for (const m of models) {
       try {
