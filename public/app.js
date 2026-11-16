@@ -269,6 +269,54 @@
   // 3. SECRET CENTER-CLICK AUTHORIZATION ENGINE
   // ("ye bas mujhe pata hoga ki bich me click karne pe cod aata hai")
   // ========================================================
+  // ========================================================
+  // 3. REAL HARDWARE MICROPHONE STREAM & ACOUSTIC ANALYSER
+  // (Continuous Real Mic Stream with Web Audio Analyser & Real Voice Reactivity)
+  // ========================================================
+  let micStream = null;
+  let micAudioCtx = null;
+  let micAnalyser = null;
+  let micDataArray = null;
+  let realMicVolume = 0;
+
+  async function initRealMicrophone() {
+    if (micStream && micStream.active) return true;
+
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!micAudioCtx && AudioCtx) {
+        micAudioCtx = new AudioCtx();
+      }
+      if (micAudioCtx && micAudioCtx.state === 'suspended') {
+        await micAudioCtx.resume();
+      }
+
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+
+        if (micAudioCtx) {
+          const source = micAudioCtx.createMediaStreamSource(micStream);
+          micAnalyser = micAudioCtx.createAnalyser();
+          micAnalyser.fftSize = 128;
+          micAnalyser.smoothingTimeConstant = 0.5;
+          source.connect(micAnalyser);
+          micDataArray = new Uint8Array(micAnalyser.frequencyBinCount);
+        }
+        return true;
+      }
+    } catch (err) {
+      console.warn('[Real Mic Stream Permission Error]', err);
+      return false;
+    }
+    return false;
+  }
+
   function primeMobileMedia() {
     // 1. Web Audio Context Unlock for mobile browsers
     try {
@@ -287,16 +335,8 @@
       silent.play().catch(() => {});
     } catch(_) {}
 
-    // 3. Trigger native Android Chrome mic permission on user gesture!
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then((stream) => {
-          stream.getTracks().forEach(track => track.stop());
-        })
-        .catch((err) => {
-          console.warn('[Mic Permission Gesture]', err);
-        });
-    }
+    // 3. Keep real microphone stream active (Hardware mic indicator on)
+    initRealMicrophone();
   }
 
   let lastOrbClickTime = 0;
@@ -779,6 +819,20 @@
 
     const t = Date.now() * 0.001;
 
+    // Read real hardware microphone acoustic frequency data
+    if (micAnalyser && state.isListening && !state.isSpeaking && micDataArray) {
+      micAnalyser.getByteFrequencyData(micDataArray);
+      let sum = 0;
+      for (let i = 0; i < micDataArray.length; i++) {
+        sum += micDataArray[i];
+      }
+      const avg = sum / micDataArray.length;
+      const targetVol = avg / 255;
+      realMicVolume += (targetVol - realMicVolume) * 0.35;
+    } else {
+      realMicVolume *= 0.82;
+    }
+
     // Smooth lerp particle morphing
     if (threeParticleSystem && threeParticleSystem.geometry && threeParticleSystem.geometry.attributes.position) {
       const posAttr = threeParticleSystem.geometry.attributes.position;
@@ -789,30 +843,31 @@
       posAttr.needsUpdate = true;
     }
 
-    // Acoustic & State Reactivity
+    // Acoustic & State Reactivity (Real-Time Voice Volume Reaction like ChatGPT/Gemini)
     let pulseScale = 1.0;
     if (state.isSpeaking) {
       pulseScale = 1.18 + Math.sin(t * 12) * 0.16;
     } else if (state.isListening) {
-      pulseScale = 1.08 + Math.sin(t * 8) * 0.1;
+      // Dynamic response to the REAL hardware microphone volume!
+      pulseScale = 1.0 + (realMicVolume * 0.65) + Math.sin(t * 4) * 0.04;
     } else {
       pulseScale = 1.0 + Math.sin(t * 2.5) * 0.05;
     }
 
     if (threeCoreMesh) {
       threeCoreMesh.scale.set(pulseScale, pulseScale, pulseScale);
-      threeCoreMesh.rotation.x += 0.015;
-      threeCoreMesh.rotation.y += 0.02;
+      threeCoreMesh.rotation.x += 0.015 + realMicVolume * 0.06;
+      threeCoreMesh.rotation.y += 0.02 + realMicVolume * 0.06;
     }
 
     if (threeOuterRing1) {
-      threeOuterRing1.rotation.z += 0.012;
-      threeOuterRing1.rotation.x += 0.006;
+      threeOuterRing1.rotation.z += 0.012 + realMicVolume * 0.05;
+      threeOuterRing1.rotation.x += 0.006 + realMicVolume * 0.03;
     }
 
     if (threeOuterRing2) {
-      threeOuterRing2.rotation.z -= 0.008;
-      threeOuterRing2.rotation.y += 0.01;
+      threeOuterRing2.rotation.z -= 0.008 + realMicVolume * 0.05;
+      threeOuterRing2.rotation.y += 0.01 + realMicVolume * 0.03;
     }
 
     // Natural 3D floating rotation + inertia
@@ -1141,12 +1196,10 @@
 
         if (onDone) onDone();
 
-        // 24/7 Continuous Hands-Free Listening: immediately resume mic
-        if (state.unlocked && state.is24x7Active) {
-          setTimeout(() => {
-            if (!state.isSpeaking) startListening();
-          }, 250);
-        }
+        // 24/7 Continuous Hands-Free Listening: immediately resume mic like ChatGPT/Siri!
+        setTimeout(() => {
+          if (!state.isSpeaking) startListening();
+        }, 200);
       };
 
       // 1. Studio-Quality Neural Audio Stream from /api/tts (ONLY sweet studio neural voice!)
@@ -1281,8 +1334,8 @@
 
     speechRecognizer = new SpeechRec();
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    speechRecognizer.continuous = !isMobile;
-    speechRecognizer.interimResults = false;
+    speechRecognizer.continuous = true;
+    speechRecognizer.interimResults = true;
     speechRecognizer.lang = 'hi-IN';
 
     speechRecognizer.onstart = () => {
@@ -1291,55 +1344,35 @@
       if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.add('listening');
       if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.add('listening');
       if (DOM.stageDialogueState) {
-        DOM.stageDialogueState.textContent = '🟢 24/7 LISTENING TO MASTER...';
+        DOM.stageDialogueState.innerHTML = '🟢 <span style="color:#00f0ff;">24/7 MIC ACTIVE</span> • बोलिए, मैं सुन रही हूँ 🌸';
       }
+      playTone(587.33, 0.08, 'sine', 0.12);
+      setTimeout(() => playTone(880, 0.12, 'sine', 0.15), 75);
     };
 
     speechRecognizer.onresult = (event) => {
-      const results = event.results;
-      const last = results[results.length - 1];
-      if (!last || !last[0]) return;
-      const transcript = last[0].transcript.trim();
-      if (!transcript) return;
+      let interimTranscript = '';
+      let finalTranscript = '';
 
-      // 1. Check if user is giving an AUI Morph or Color command!
-      // This works ANYTIME, even if not unlocked yet!
-      if (checkAndHandleMorphCommand(transcript)) {
-        if (!state.unlocked) {
-          state.unlocked = true;
-          if (DOM.authCodeBadge) DOM.authCodeBadge.classList.add('hidden');
-          if (DOM.statusDot) {
-            DOM.statusDot.classList.remove('standby');
-            DOM.statusDot.classList.add('online');
-          }
-          if (DOM.systemStatusLabel) {
-            DOM.systemStatusLabel.textContent = 'ONLINE • 24/7 ACTIVE • MASTER VIHUHUHU';
-          }
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const item = event.results[i];
+        if (item.isFinal) {
+          finalTranscript += item[0].transcript;
+        } else {
+          interimTranscript += item[0].transcript;
         }
-        return;
       }
 
-      if (!state.unlocked) {
-        // Voice verification of the secret random code!
-        if (verifySpokenAuthCode(transcript)) {
-          authorizeMaster();
-        } else {
-          // If user gives a direct command like "song chalao" or "game banao", auto-authorize!
-          const lower = transcript.toLowerCase();
-          if (
-            lower.includes('song') || lower.includes('gaana') || lower.includes('video') ||
-            lower.includes('banao') || lower.includes('calculator') || lower.includes('game')
-          ) {
-            authorizeMaster();
-            dispatchVoiceCommand(transcript);
-          } else {
-            const failMsg = `कोड: [ ${state.activeAuthCode} ] बोलें`;
-            updateDialogue(transcript, failMsg);
-            speakText(`कोड मैच नहीं हुआ। कृपया कोड बोलिए।`);
-          }
+      // Live Interim Subtitle Feedback (Displays words as the user speaks into microphone!)
+      if (interimTranscript) {
+        if (DOM.stageDialogueState) {
+          DOM.stageDialogueState.innerHTML = `<span style="color: #00f0ff;">🎤 सुन रही हूँ: "${escapeHtml(interimTranscript)}..."</span>`;
         }
-      } else {
-        dispatchVoiceCommand(transcript);
+      }
+
+      if (finalTranscript.trim()) {
+        const transcript = finalTranscript.trim();
+        handleSpokenInput(transcript);
       }
     };
 
@@ -1352,7 +1385,7 @@
         return;
       }
       // Quietly auto-restart on silent pause/timeout in 24/7 mode
-      if (state.unlocked && state.is24x7Active && !state.isSpeaking) {
+      if (!state.isSpeaking) {
         setTimeout(() => {
           try { speechRecognizer.start(); } catch(_) {}
         }, 300);
@@ -1364,16 +1397,47 @@
       if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.remove('listening');
       if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.remove('listening');
       if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.remove('listening');
-      // 24/7 Ambient Auto-Restart on Mobile/Desktop!
-      if (state.unlocked && state.is24x7Active && !state.isSpeaking) {
+      // 24/7 Ambient Auto-Restart: keeps microphone listening continuously like ChatGPT/Siri
+      if (!state.isSpeaking) {
         setTimeout(() => {
-          try { speechRecognizer.start(); } catch(_) {}
-        }, 200);
+          if (!state.isSpeaking) {
+            try { speechRecognizer.start(); } catch(_) {}
+          }
+        }, 150);
       }
     };
   }
 
-  function startListening() {
+  function handleSpokenInput(transcript) {
+    if (!transcript) return;
+
+    // Subtle earcon acknowledgement
+    playTone(1046.5, 0.08, 'sine', 0.12);
+
+    // 1. Check if user is giving an AUI Morph or Color command!
+    if (checkAndHandleMorphCommand(transcript)) {
+      if (!state.unlocked) {
+        authorizeMaster();
+      }
+      return;
+    }
+
+    // 2. Secret 3-digit Code spoken verification
+    if (!state.unlocked && verifySpokenAuthCode(transcript)) {
+      authorizeMaster();
+      return;
+    }
+
+    // 3. Natural AI Voice Processing (Exactly like Siri, Google Assistant & ChatGPT)
+    // ANY command, question, or greeting spoken into microphone is heard and executed!
+    if (!state.unlocked) {
+      authorizeMaster();
+    }
+    dispatchVoiceCommand(transcript);
+  }
+
+  async function startListening() {
+    await initRealMicrophone();
     if (!speechRecognizer) initSpeechRecognition();
     if (!speechRecognizer) return;
 
@@ -2214,6 +2278,17 @@
         if (DOM.bgAgentToast) DOM.bgAgentToast.classList.add('hidden');
       });
     }
+
+    // Modern Voice AI First-Gesture Trigger (like Siri, Google Assistant, ChatGPT Voice)
+    // Tapping anywhere on mobile screen immediately activates real hardware microphone
+    const startAudioOnFirstGesture = () => {
+      initRealMicrophone();
+      startListening();
+      window.removeEventListener('click', startAudioOnFirstGesture);
+      window.removeEventListener('touchstart', startAudioOnFirstGesture);
+    };
+    window.addEventListener('click', startAudioOnFirstGesture, { passive: true });
+    window.addEventListener('touchstart', startAudioOnFirstGesture, { passive: true });
   }
 
   function initCompanionFeatures() {
