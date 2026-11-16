@@ -59,6 +59,14 @@
         </div>
       </div>
 
+      <!-- 3D AUI Zoom Control Pill (Pinch with 2 fingers or use +/-) -->
+      <div class="aui-zoom-control-pill" id="auiZoomControlPill">
+        <button id="zoomOutBtn" class="zoom-btn" title="Zoom Out (-)"><i class="fa-solid fa-minus"></i></button>
+        <span id="zoomLevelLabel" title="Pinch with 2 fingers or scroll to zoom">100%</span>
+        <button id="zoomInBtn" class="zoom-btn" title="Zoom In (+)"><i class="fa-solid fa-plus"></i></button>
+        <button id="zoomResetBtn" class="zoom-btn reset" title="Reset Zoom (100%)"><i class="fa-solid fa-rotate-left"></i></button>
+      </div>
+
       <!-- Minimalist Dynamic Subtitle HUD (Appears only when speaking/listening) -->
       <div class="aui-status-stream" id="stageDialogueState">
         STANDBY • TAP TO TALK • बोलिए, मैं सुन रही हूँ 🌸
@@ -82,23 +90,29 @@
       <button class="bg-toast-close" id="bgToastClose"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <!-- Direct YouTube Floating Stage (On Top of AUI: Plays Song/Video, closes on 'Band karo') -->
+    <!-- Direct Media Floating Stage (On Top of AUI: Plays 4K Video or YouTube, closes on 'Band karo') -->
     <div id="youtubeDirectOverlay" class="youtube-direct-overlay hidden">
       <div class="youtube-direct-card">
         <div class="youtube-direct-header">
           <div class="youtube-title-box">
-            <i class="fa-brands fa-youtube" style="color: #ff0033; font-size: 18px;"></i>
-            <span id="youtubeOverlayTitle">YouTube Direct Player</span>
+            <i class="fa-solid fa-film" id="directPlayerIcon" style="color: #00f0ff; font-size: 16px;"></i>
+            <span id="youtubeOverlayTitle">CYBER 4K VIDEO & MEDIA PLAYER</span>
+          </div>
+          <div class="player-mode-switch">
+            <button id="switchHtmlVideoBtn" class="mode-pill-btn active" title="Play High-Def 4K Cyber Video">🎬 4K Video</button>
+            <button id="switchYoutubeBtn" class="mode-pill-btn" title="Play YouTube Stream">📺 YouTube</button>
           </div>
           <button id="closeYoutubeOverlayBtn" class="youtube-close-btn" title="Band Karein (या बोलिए 'Band karo')">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
-        <div class="youtube-iframe-container">
-          <iframe id="directYoutubePlayer" src="" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        <div class="youtube-iframe-container" id="directMediaContainer">
+          <video id="directHtmlVideo" class="direct-html-video" controls playsinline loop src="demo-video.mp4" poster="anime-bg.jpg"></video>
+          <iframe id="directYoutubePlayer" class="hidden" src="" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
         </div>
         <div class="youtube-direct-hint">
-          <span>बोलिए: <strong>"Band karo"</strong> (यूट्यूब तुरंत बंद हो जाएगा)</span>
+          <span>बोलिए: <strong>"Band karo"</strong> (वीडियो/गाना तुरंत बंद हो जाएगा)</span>
+          <span class="pulse-mic"><i class="fa-solid fa-circle-dot"></i> Live Media</span>
         </div>
       </div>
     </div>
