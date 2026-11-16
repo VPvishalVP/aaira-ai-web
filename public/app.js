@@ -9,8 +9,7 @@
   // Global Application State
   const state = {
     unlocked: false,
-    enteredPin: '',
-    generatedKey: null,
+    activeAuthCode: null,
     ttsEnabled: true,
     isListening: false,
     isSpeaking: false,
@@ -25,32 +24,27 @@
   };
 
   const VOICE_PROFILES = [
-    { label: '🌸 Sweet Hindi AI', lang: 'hi', pitch: 1.18, rate: 0.94 },
-    { label: '💎 Neural Companion', lang: 'en', pitch: 1.06, rate: 1.0 },
-    { label: '✨ Cyber Anime AI', lang: 'hi', pitch: 1.25, rate: 1.02 }
+    { label: '🌸 Sweet Hindi AI', lang: 'hi', pitch: 1.06, rate: 0.94 },
+    { label: '💎 Neural Companion', lang: 'en', pitch: 1.02, rate: 0.98 },
+    { label: '✨ Cyber Anime AI', lang: 'hi', pitch: 1.18, rate: 1.0 }
   ];
 
-  // Curated Royalty-Free Music Playlist
+  // Guaranteed Local High-Quality Royalty-Free Music
   const PLAYLIST = [
     {
       title: 'Midnight Lo-Fi Chill Beats',
-      artist: 'AAIRA Cyber Lofi Stream',
-      url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3'
+      artist: 'AAIRA Cyber Radio (HQ)',
+      url: '/music/lofi-chill.mp3'
     },
     {
       title: 'Cyberpunk Synthwave Neon Pulse',
-      artist: 'Retro Wave Cyber Core',
-      url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=synthwave-80s-110045.mp3'
+      artist: 'Retro Synth Core (HQ)',
+      url: '/music/cyber-pulse.mp3'
     },
     {
-      title: 'Anime Sunset Lo-Fi',
-      artist: 'Tokyo Chill Melodies',
-      url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=spirit-blossom-15285.mp3'
-    },
-    {
-      title: 'Deep Focus Coding Flow',
-      artist: 'Ambient Binaural Beats',
-      url: 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3?filename=ambient-piano-amp-strings-10711.mp3'
+      title: 'Anime Sunset Lo-Fi Melodies',
+      artist: 'Tokyo Chill Wave (HQ)',
+      url: '/music/anime-chill.mp3'
     }
   ];
 
@@ -59,30 +53,28 @@
     // Blast Canvas
     unlockBlastCanvas: document.getElementById('unlockBlastCanvas'),
 
-    // Screen 1: Portal Gateway
-    portalGateway: document.getElementById('portalGateway'),
-    portalCard: document.getElementById('portalCard'),
-    portalOrbCanvas: document.getElementById('portalOrbCanvas'),
-    portalLockIcon: document.getElementById('portalLockIcon'),
-    pinDigit0: document.getElementById('pinDigit0'),
-    pinDigit1: document.getElementById('pinDigit1'),
-    pinDigit2: document.getElementById('pinDigit2'),
-    portalMessage: document.getElementById('portalMessage'),
-    keyBtns: document.querySelectorAll('.key-btn[data-num]'),
-    keyClearBtn: document.getElementById('keyClearBtn'),
-    keyBackspaceBtn: document.getElementById('keyBackspaceBtn'),
-    generateRandomKeyBtn: document.getElementById('generateRandomKeyBtn'),
-    masterUnlockBtn: document.getElementById('masterUnlockBtn'),
-
-    // Screen 2: Clean Voice Companion Stage
-    aiVoiceStage: document.getElementById('aiVoiceStage'),
-    stageTtsToggle: document.getElementById('stageTtsToggle'),
+    // Top Navigation HUD
+    statusDot: document.getElementById('statusDot'),
+    systemStatusLabel: document.getElementById('systemStatusLabel'),
     stageLockBtn: document.getElementById('stageLockBtn'),
+    stageLockIcon: document.getElementById('stageLockIcon'),
+    stageTtsToggle: document.getElementById('stageTtsToggle'),
     voiceProfileBtn: document.getElementById('voiceProfileBtn'),
     voiceProfileLabel: document.getElementById('voiceProfileLabel'),
+
+    // Center Quantum AI Core
     mainAIOralCanvas: document.getElementById('mainAIOralCanvas'),
     mainOrbBtn: document.getElementById('mainOrbBtn'),
     aiCoreNucleus: document.getElementById('aiCoreNucleus'),
+
+    // Secret Authorization Pod
+    authCodeBadge: document.getElementById('authCodeBadge'),
+    authDigit0: document.getElementById('authDigit0'),
+    authDigit1: document.getElementById('authDigit1'),
+    authDigit2: document.getElementById('authDigit2'),
+    authVoiceHintText: document.getElementById('authVoiceHintText'),
+
+    // Dialogue Subtitle HUD
     stageDialogueState: document.getElementById('stageDialogueState'),
     stageDialogueBody: document.getElementById('stageDialogueBody'),
     stageMicBtn: document.getElementById('stageMicBtn'),
@@ -254,152 +246,108 @@
   }
 
   // ========================================================
-  // 3. 3-DIGIT PASSWORD VERIFICATION LOGIC
+  // 3. SECRET CENTER-CLICK AUTHORIZATION ENGINE
+  // ("ye bas mujhe pata hoga ki bich me click karne pe cod aata hai")
   // ========================================================
-  function updatePinDisplay() {
-    const pin = state.enteredPin;
-    const d0 = pin[0] || '-';
-    const d1 = pin[1] || '-';
-    const d2 = pin[2] || '-';
-
-    DOM.pinDigit0.textContent = d0;
-    DOM.pinDigit1.textContent = d1;
-    DOM.pinDigit2.textContent = d2;
-
-    DOM.pinDigit0.classList.toggle('filled', !!pin[0]);
-    DOM.pinDigit1.classList.toggle('filled', !!pin[1]);
-    DOM.pinDigit2.classList.toggle('filled', !!pin[2]);
-
-    DOM.pinDigit0.classList.remove('error');
-    DOM.pinDigit1.classList.remove('error');
-    DOM.pinDigit2.classList.remove('error');
-  }
-
-  function handleKeypadPress(num) {
-    if (state.enteredPin.length < 3) {
-      state.enteredPin += num;
-      playTone(600 + state.enteredPin.length * 150, 0.08);
-      updatePinDisplay();
-
-      if (state.enteredPin.length === 3) {
-        setTimeout(verifyEnteredPassword, 150);
-      }
+  function handleMainOrbClick() {
+    if (!state.unlocked) {
+      // Secret Master Authorization Trigger!
+      generateSecretAuthCode();
+    } else {
+      // When system is active: toggle listening
+      toggleListening();
     }
   }
 
-  function handleKeypadBackspace() {
-    if (state.enteredPin.length > 0) {
-      state.enteredPin = state.enteredPin.slice(0, -1);
-      playTone(400, 0.05);
-      updatePinDisplay();
+  function generateSecretAuthCode() {
+    // Generate fresh 3-digit random numeric code
+    const code = Math.floor(100 + Math.random() * 900).toString();
+    state.activeAuthCode = code;
+
+    // Display in the floating holographic pod
+    DOM.authDigit0.textContent = code[0];
+    DOM.authDigit1.textContent = code[1];
+    DOM.authDigit2.textContent = code[2];
+    DOM.authVoiceHintText.textContent = `बोलिए: "${code[0]} ${code[1]} ${code[2]}" (या यहाँ टैप करें)`;
+    DOM.authCodeBadge.classList.remove('hidden');
+
+    playTone(1046.5, 0.18, 'triangle', 0.25);
+
+    const promptMsg = `मास्टर, ऑथराइजेशन कोड है: <strong>${code}</strong>। कृपया कोड बोलिए या इस पर टैप करें।`;
+    updateDialogue("Authorization Triggered", promptMsg);
+
+    // Announce code via sweet voice & activate listening
+    speakText(`मास्टर, ऑथराइजेशन कोड है ${code[0]} ${code[1]} ${code[2]}। कृपया कोड बोलिए।`, () => {
+      startListening();
+    });
+  }
+
+  function verifySpokenAuthCode(text) {
+    if (!state.activeAuthCode) return false;
+
+    // 1. Direct digits (e.g. "811", "582", "5 8 2", "code 582")
+    const digitsOnly = text.replace(/\D/g, '');
+    if (digitsOnly.includes(state.activeAuthCode) || digitsOnly.includes('811')) {
+      return true;
     }
-  }
 
-  function handleKeypadClear() {
-    state.enteredPin = '';
-    playTone(300, 0.08);
-    updatePinDisplay();
-    setPortalMessage('3-Digit Password enter karein (Master: 811)');
-  }
+    // 2. Hindi & English words to digits conversion
+    const wordMap = {
+      'शून्य': '0', 'zero': '0',
+      'एक': '1', 'one': '1',
+      'दो': '2', 'two': '2',
+      'तीन': '3', 'three': '3',
+      'चार': '4', 'four': '4',
+      'पांच': '5', 'पाँच': '5', 'five': '5',
+      'छह': '6', 'छ:': '6', 'six': '6',
+      'सात': '7', 'seven': '7',
+      'आठ': '8', 'eight': '8',
+      'नौ': '9', 'nine': '9'
+    };
 
-  function setPortalMessage(text, type = '') {
-    DOM.portalMessage.textContent = text;
-    DOM.portalMessage.className = `portal-message ${type}`;
-  }
-
-  async function verifyEnteredPassword() {
-    const key = state.enteredPin;
-    setPortalMessage('Verifying quantum key...', '');
-
-    try {
-      const res = await fetch('/api/verify-key', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key })
-      });
-      const data = await res.json();
-
-      if (data && data.success) {
-        handleUnlockSuccess(data.message || 'Access Granted! Welcome Master VIHUHUHU');
-      } else {
-        handleUnlockFailure(data.message || 'Galat Password! Punah prayas karein.');
-      }
-    } catch (_) {
-      // Local fallback
-      if (key === '811' || key === state.generatedKey) {
-        handleUnlockSuccess('Access Granted! Welcome Master VIHUHUHU');
-      } else {
-        handleUnlockFailure('Galat Password! Master Key 811 use karein.');
-      }
+    let converted = text.toLowerCase();
+    for (const [word, digit] of Object.entries(wordMap)) {
+      converted = converted.replaceAll(word, digit);
     }
+    const convertedDigits = converted.replace(/\D/g, '');
+    if (convertedDigits.includes(state.activeAuthCode) || convertedDigits.includes('811')) {
+      return true;
+    }
+
+    return false;
   }
 
-  function handleUnlockSuccess(msg) {
+  function authorizeMaster() {
+    if (state.unlocked) return;
     state.unlocked = true;
-    setPortalMessage(msg, 'success');
-    DOM.portalLockIcon.className = 'fa-solid fa-lock-open';
-    DOM.portalLockIcon.style.color = '#10b981';
 
-    // Play Grand Unlock Chord & Warp Blast
-    playUnlockChord();
-    triggerWarpUnlockBlast();
+    // Trigger Fullscreen Cinematic Warp Unlock Blast
+    triggerWarpUnlockBlast(() => {
+      DOM.authCodeBadge.classList.add('hidden');
+      DOM.statusDot.classList.remove('standby');
+      DOM.statusDot.classList.add('online');
+      DOM.systemStatusLabel.textContent = 'ONLINE • 24/7 VOICE COMMANDS ACTIVE • MASTER VIHUHUHU';
+      DOM.stageLockIcon.className = 'fa-solid fa-lock-open';
 
-    // Voice Welcome
-    speakText('Access Granted! Welcome Master VIHUHUHU. AAIRA voice system is ready.');
+      playUnlockChord();
 
-    // Transition from Gateway to Clean Voice Stage
-    setTimeout(() => {
-      DOM.portalGateway.classList.add('unlocked');
-      setTimeout(() => {
-        DOM.portalGateway.classList.add('hidden');
-        DOM.aiVoiceStage.classList.remove('hidden');
-        initCompanionFeatures();
-      }, 450);
-    }, 400);
-  }
-
-  function handleUnlockFailure(msg) {
-    playTone(200, 0.25, 'sawtooth');
-    DOM.pinDigit0.classList.add('error');
-    DOM.pinDigit1.classList.add('error');
-    DOM.pinDigit2.classList.add('error');
-    setPortalMessage(msg, 'error');
-
-    setTimeout(() => {
-      state.enteredPin = '';
-      updatePinDisplay();
-    }, 700);
-  }
-
-  async function generateRandomKey() {
-    playTone(700, 0.1);
-    try {
-      const res = await fetch('/api/generate-key', { method: 'POST' });
-      const data = await res.json();
-      const code = (data && data.key) ? String(data.key) : Math.floor(100 + Math.random() * 900).toString();
-      state.generatedKey = code;
-      state.enteredPin = code;
-      updatePinDisplay();
-      setPortalMessage(`New 3-Digit Key: [ ${code} ] - Click to unlock!`, 'success');
-      setTimeout(verifyEnteredPassword, 400);
-    } catch (_) {
-      const code = '811';
-      state.enteredPin = code;
-      updatePinDisplay();
-      setTimeout(verifyEnteredPassword, 300);
-    }
+      const welcomeMsg = "ऑथराइजेशन सफल! वेलकम मास्टर विहुहुहु! आपकी पूरी तरह वॉइस-कमांड पर चलने वाली आएरा एक्टिव हो गई है। बताइए क्या सेवा करूँ?";
+      updateDialogue("Master Authorized", welcomeMsg);
+      speakText(welcomeMsg);
+    });
   }
 
   function lockSystem() {
     state.unlocked = false;
-    state.enteredPin = '';
+    state.activeAuthCode = null;
+    DOM.authCodeBadge.classList.add('hidden');
+    DOM.statusDot.classList.remove('online');
+    DOM.statusDot.classList.add('standby');
+    DOM.systemStatusLabel.textContent = 'STANDBY • TAP CORE TO AUTHORIZE';
+    DOM.stageLockIcon.className = 'fa-solid fa-lock';
     closeAllHUDs();
-    updatePinDisplay();
-    DOM.portalLockIcon.className = 'fa-solid fa-lock';
-    DOM.portalLockIcon.style.color = '#ffffff';
-    DOM.aiVoiceStage.classList.add('hidden');
-    DOM.portalGateway.classList.remove('unlocked', 'hidden');
-    setPortalMessage('3-Digit Password enter karein (Master: 811)');
+    updateDialogue("System Standby", "सिस्टम स्टैंडबाय मोड में है। एक्टिवेट करने के लिए क्वांटम कोर के बीच में क्लिक करें।");
+    playTone(440, 0.2);
   }
 
   // ========================================================
@@ -522,33 +470,7 @@
     requestAnimationFrame(renderMainOrb);
   }
 
-  // Mini Portal Lock Orb
-  function initPortalMiniOrb() {
-    const canvas = DOM.portalOrbCanvas;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
 
-    function draw(time) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const t = time * 0.001;
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(t * 0.4);
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([6, 6]);
-      ctx.beginPath();
-      ctx.arc(0, 0, 55, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-
-      requestAnimationFrame(draw);
-    }
-    requestAnimationFrame(draw);
-  }
 
   // ========================================================
   // 5. SUPERIOR NATURAL FEMALE VOICE TTS & PROFILES
@@ -684,7 +606,19 @@
     speechRecognizer.onresult = (event) => {
       const transcript = event.results[0][0].transcript.trim();
       DOM.stageTextInput.value = transcript;
-      dispatchVoiceCommand(transcript);
+
+      if (!state.unlocked) {
+        // Voice verification of the secret random code!
+        if (verifySpokenAuthCode(transcript)) {
+          authorizeMaster();
+        } else {
+          const failMsg = `कोड मैच नहीं हुआ। कृपया कोड <strong>${state.activeAuthCode}</strong> बोलिए या ऊपर टैप करें।`;
+          updateDialogue(transcript, failMsg);
+          speakText(`कोड मैच नहीं हुआ। कृपया कोड बोलिए।`);
+        }
+      } else {
+        dispatchVoiceCommand(transcript);
+      }
     };
 
     speechRecognizer.onerror = () => stopListening();
@@ -730,7 +664,15 @@
       lower.includes('gaana') || lower.includes('music') || lower.includes('song') ||
       lower.includes('गाना') || lower.includes('गीत') || lower.includes('lofi')
     ) {
-      if (lower.includes('band') || lower.includes('rok') || lower.includes('pause') || lower.includes('stop')) {
+      if (lower.includes('next') || lower.includes('agla') || lower.includes('badlo') || lower.includes('change')) {
+        playNextTrack();
+        updateDialogue(text, 'जी मास्टर, अगला गाना चला दिया है। 🎶');
+        speakText('जी मास्टर, अगला गाना चला दिया है।');
+      } else if (lower.includes('prev') || lower.includes('pichhla')) {
+        playPrevTrack();
+        updateDialogue(text, 'जी मास्टर, पिछला गाना चला दिया है। 🎶');
+        speakText('जी मास्टर, पिछला गाना चला दिया है।');
+      } else if (lower.includes('band') || lower.includes('rok') || lower.includes('pause') || lower.includes('stop')) {
         toggleAudioPlay(false);
         updateDialogue(text, 'जी मास्टर, म्यूजिक रोक दिया है।');
         speakText('जी मास्टर, म्यूजिक रोक दिया है।');
@@ -771,14 +713,20 @@
     }
 
     // Command 4: CLOSE / HIDE COMMAND ("Band karo" / "Chhupao" / "Close" / "Hide")
-    if (lower.includes('band karo') || lower.includes('chhupao') || lower.includes('close') || lower.includes('hide') || lower.includes('hatao')) {
+    if (lower.includes('band karo') || lower.includes('chhupao') || lower.includes('close') || lower.includes('hide') || lower.includes('hatao') || lower.includes('screen saaf')) {
       closeAllHUDs();
       updateDialogue(text, 'जी मास्टर, सभी फीचर्स छुपा दिए हैं और स्क्रीन साफ़ कर दी है। ✨');
       speakText('जी मास्टर, सभी फीचर्स छुपा दिए हैं।');
       return;
     }
 
-    // Command 5: VOICE CHANGE COMMAND ("Voice badlo" / "Aawaz badlo")
+    // Command 5: SYSTEM LOCK COMMAND ("Lock karo" / "Band ho jao")
+    if (lower.includes('lock karo') || lower.includes('lock system') || lower.includes('band ho jao')) {
+      lockSystem();
+      return;
+    }
+
+    // Command 6: VOICE CHANGE COMMAND ("Voice badlo" / "Aawaz badlo")
     if (
       lower.includes('voice badlo') || lower.includes('aawaz badlo') || lower.includes('awaaz badlo') ||
       lower.includes('awaj badlo') || lower.includes('voice change') || lower.includes('change voice') ||
@@ -788,7 +736,7 @@
       return;
     }
 
-    // Command 6: BUILD APPS / GAMES / OMNIPOTENT CODE GENERATION ("Game banao" / "Calculator banao")
+    // Command 7: BUILD APPS / GAMES / OMNIPOTENT CODE GENERATION ("Game banao" / "Calculator banao")
     handleOmnipotentCodeRequest(text);
   }
 
@@ -1188,6 +1136,13 @@
       DOM.videoPlayDirectBtn.addEventListener('click', playDirectVideo);
     }
 
+    DOM.dashboardVideo.addEventListener('play', () => {
+      if (DOM.videoPlayDirectBtn) DOM.videoPlayDirectBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+    });
+    DOM.dashboardVideo.addEventListener('pause', () => {
+      if (DOM.videoPlayDirectBtn) DOM.videoPlayDirectBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play';
+    });
+
     DOM.videoFullscreenBtn.addEventListener('click', () => {
       const wrap = document.querySelector('.video-screen-wrap');
       if (!document.fullscreenElement) {
@@ -1201,12 +1156,17 @@
   function playDirectVideo() {
     DOM.youtubeVideoFrame.classList.add('hidden');
     DOM.dashboardVideo.classList.remove('hidden');
-    DOM.dashboardVideo.play().then(() => {
-      if (DOM.videoPlayDirectBtn) DOM.videoPlayDirectBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
-    }).catch(() => {
-      DOM.dashboardVideo.muted = true;
-      DOM.dashboardVideo.play().catch(() => {});
-    });
+    if (DOM.dashboardVideo.paused) {
+      DOM.dashboardVideo.play().then(() => {
+        if (DOM.videoPlayDirectBtn) DOM.videoPlayDirectBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+      }).catch(() => {
+        DOM.dashboardVideo.muted = true;
+        DOM.dashboardVideo.play().catch(() => {});
+      });
+    } else {
+      DOM.dashboardVideo.pause();
+      if (DOM.videoPlayDirectBtn) DOM.videoPlayDirectBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play';
+    }
   }
 
   function loadVideo(type, src, title = 'Video Stream') {
@@ -1290,35 +1250,13 @@
   // 13. EVENT LISTENERS SETUP
   // ========================================================
   function setupEventListeners() {
-    // Portal Keypad Listeners
-    DOM.keyBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        handleKeypadPress(btn.getAttribute('data-num'));
-      });
-    });
+    // Secret Center Click on Core: Generates Auth Code when locked, or toggles mic when unlocked
+    DOM.mainOrbBtn.addEventListener('click', handleMainOrbClick);
 
-    DOM.keyClearBtn.addEventListener('click', handleKeypadClear);
-    DOM.keyBackspaceBtn.addEventListener('click', handleKeypadBackspace);
-
-    // Keyboard physical keypress listener for PIN
-    window.addEventListener('keydown', (e) => {
-      if (!state.unlocked) {
-        if (/^[0-9]$/.test(e.key)) {
-          handleKeypadPress(e.key);
-        } else if (e.key === 'Backspace') {
-          handleKeypadBackspace();
-        } else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
-          handleKeypadClear();
-        }
-      }
-    });
-
-    DOM.generateRandomKeyBtn.addEventListener('click', generateRandomKey);
-    DOM.masterUnlockBtn.addEventListener('click', () => {
-      state.enteredPin = '811';
-      updatePinDisplay();
-      setTimeout(verifyEnteredPassword, 250);
-    });
+    // Tapping the Secret Code Badge quick-authorizes as fallback
+    if (DOM.authCodeBadge) {
+      DOM.authCodeBadge.addEventListener('click', authorizeMaster);
+    }
 
     // Stage Top Actions
     DOM.stageLockBtn.addEventListener('click', lockSystem);
@@ -1333,19 +1271,42 @@
         : '<i class="fa-solid fa-volume-xmark"></i> <span class="hide-mobile">VOICE OFF</span>';
     });
 
-    // Main Orb & Mic Button Click to Talk
-    DOM.mainOrbBtn.addEventListener('click', toggleListening);
-    DOM.stageMicBtn.addEventListener('click', toggleListening);
+    // Mic button
+    DOM.stageMicBtn.addEventListener('click', () => {
+      if (!state.unlocked) {
+        generateSecretAuthCode();
+      } else {
+        toggleListening();
+      }
+    });
 
     DOM.stageSendBtn.addEventListener('click', () => {
       const val = DOM.stageTextInput.value.trim();
-      if (val) dispatchVoiceCommand(val);
+      if (!val) return;
+      if (!state.unlocked) {
+        if (verifySpokenAuthCode(val)) {
+          authorizeMaster();
+        } else {
+          updateDialogue(val, `कोड मैच नहीं हुआ। कृपया कोड <strong>${state.activeAuthCode}</strong> दर्ज करें या बोलें।`);
+        }
+      } else {
+        dispatchVoiceCommand(val);
+      }
     });
 
     DOM.stageTextInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         const val = DOM.stageTextInput.value.trim();
-        if (val) dispatchVoiceCommand(val);
+        if (!val) return;
+        if (!state.unlocked) {
+          if (verifySpokenAuthCode(val)) {
+            authorizeMaster();
+          } else {
+            updateDialogue(val, `कोड मैच नहीं हुआ। कृपया कोड <strong>${state.activeAuthCode}</strong> दर्ज करें या बोलें।`);
+          }
+        } else {
+          dispatchVoiceCommand(val);
+        }
       }
     });
 
@@ -1353,7 +1314,11 @@
     DOM.voiceCmdChips.forEach(chip => {
       chip.addEventListener('click', () => {
         const cmd = chip.getAttribute('data-cmd');
-        dispatchVoiceCommand(cmd);
+        if (!state.unlocked) {
+          generateSecretAuthCode();
+        } else {
+          dispatchVoiceCommand(cmd);
+        }
       });
     });
 
@@ -1393,7 +1358,7 @@
 
   // Initialization
   window.addEventListener('DOMContentLoaded', () => {
-    initPortalMiniOrb();
+    initCompanionFeatures();
     setupEventListeners();
   });
 

@@ -24,78 +24,10 @@
   <canvas id="unlockBlastCanvas" class="unlock-blast-canvas hidden"></canvas>
 
   <!-- ========================================================
-       SCREEN 1: CINEMATIC 3-DIGIT PASSWORD GATEWAY
+       UNIFIED CLEAN AUI: VOICE-FIRST SCI-FI COMPANION
+       (Only AUI visible; center click gives secret random code)
        ======================================================== -->
-  <div id="portalGateway" class="portal-gateway">
-    <div class="cyber-overlay"></div>
-    <div class="grid-backdrop"></div>
-
-    <div class="portal-card" id="portalCard">
-      <div class="card-glow-border"></div>
-
-      <!-- Portal Header -->
-      <header class="portal-header">
-        <div class="system-badge">
-          <span class="pulse-dot"></span>
-          <span>VIHUHUHU KI AAIRA • QUANTUM GATEWAY</span>
-        </div>
-        <h1 class="portal-title">AAIRA AI</h1>
-        <p class="portal-sub">ENTER 3-DIGIT ACCESS PASSWORD</p>
-      </header>
-
-      <!-- Center Mini Quantum Lock Orb -->
-      <div class="lock-orb-container">
-        <canvas id="portalOrbCanvas" width="160" height="160"></canvas>
-        <div class="lock-orb-center">
-          <i class="fa-solid fa-lock" id="portalLockIcon"></i>
-        </div>
-      </div>
-
-      <!-- 3 Digit Password Display -->
-      <div class="pin-display-row" id="pinDisplayRow">
-        <div class="pin-digit-box" id="pinDigit0">-</div>
-        <div class="pin-digit-box" id="pinDigit1">-</div>
-        <div class="pin-digit-box" id="pinDigit2">-</div>
-      </div>
-
-      <!-- Status Message -->
-      <div id="portalMessage" class="portal-message">3-Digit Password enter karein (Master: 811)</div>
-
-      <!-- Futuristic Cyber Keypad -->
-      <div class="cyber-keypad">
-        <button class="key-btn" data-num="1">1</button>
-        <button class="key-btn" data-num="2">2</button>
-        <button class="key-btn" data-num="3">3</button>
-        <button class="key-btn" data-num="4">4</button>
-        <button class="key-btn" data-num="5">5</button>
-        <button class="key-btn" data-num="6">6</button>
-        <button class="key-btn" data-num="7">7</button>
-        <button class="key-btn" data-num="8">8</button>
-        <button class="key-btn" data-num="9">9</button>
-        <button class="key-btn key-action" id="keyClearBtn" title="Clear">C</button>
-        <button class="key-btn" data-num="0">0</button>
-        <button class="key-btn key-action" id="keyBackspaceBtn" title="Backspace"><i class="fa-solid fa-delete-left"></i></button>
-      </div>
-
-      <!-- Alternative Input & Quick Random Key Generator -->
-      <div class="portal-footer-actions">
-        <button id="generateRandomKeyBtn" class="link-btn">
-          <i class="fa-solid fa-dice"></i> Random Key Generate Karein
-        </button>
-        <span class="dot-separator">•</span>
-        <button id="masterUnlockBtn" class="link-btn">
-          <i class="fa-solid fa-key"></i> Master Key (811) se Kholein
-        </button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ========================================================
-       SCREEN 2: CLEAN, IMMERSIVE VOICE-FIRST AI COMPANION
-       (All features stay hidden until voice commanded!)
-       ======================================================== -->
-  <div id="aiVoiceStage" class="ai-voice-stage hidden">
+  <div id="aiVoiceStage" class="ai-voice-stage">
     <div class="cyber-overlay"></div>
     <div class="grid-backdrop"></div>
 
@@ -105,7 +37,10 @@
         <div class="brand-orb-mini"></div>
         <div class="brand-info">
           <div class="brand-title">AAIRA <span class="accent-text">AI</span></div>
-          <div class="brand-status"><span class="status-dot"></span> 24/7 VOICE COMMANDS ACTIVE • MASTER VIHUHUHU</div>
+          <div class="brand-status">
+            <span class="status-dot standby" id="statusDot"></span>
+            <span id="systemStatusLabel">STANDBY • TAP CORE TO AUTHORIZE</span>
+          </div>
         </div>
       </div>
 
@@ -122,7 +57,7 @@
 
         <!-- Lock System Button -->
         <button id="stageLockBtn" class="hud-lock-btn" title="Lock System">
-          <i class="fa-solid fa-lock"></i>
+          <i class="fa-solid fa-lock" id="stageLockIcon"></i>
         </button>
       </div>
     </header>
@@ -131,7 +66,7 @@
     <div class="stage-center-area">
       <div class="main-orb-wrapper">
         <canvas id="mainAIOralCanvas" width="420" height="420"></canvas>
-        <div class="main-orb-touch-target" id="mainOrbBtn" title="AAIRA Quantum Core">
+        <div class="main-orb-touch-target" id="mainOrbBtn" title="AAIRA Quantum Core (Click for Auth Code)">
           <!-- Living Holographic AI Core (No keyboard mic or tap text!) -->
           <div class="ai-core-gyro-ring"></div>
           <div class="ai-core-energy-iris"></div>
@@ -141,6 +76,23 @@
           </div>
           <div class="ai-wave-ripples" id="aiWaveRipples">
             <span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <!-- Secret Authorization Code Floating Pod (Only appears when center core is tapped) -->
+        <div id="authCodeBadge" class="auth-code-badge hidden" title="Click to Quick-Authorize or Speak the Code">
+          <div class="auth-badge-header">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>MASTER AUTH CODE</span>
+          </div>
+          <div class="auth-code-digits" id="authCodeDigits">
+            <span class="auth-digit" id="authDigit0">-</span>
+            <span class="auth-digit" id="authDigit1">-</span>
+            <span class="auth-digit" id="authDigit2">-</span>
+          </div>
+          <div class="auth-badge-footer">
+            <span class="auth-mic-wave"><i class="fa-solid fa-microphone-lines"></i></span>
+            <span id="authVoiceHintText">बोलिए: "यह कोड" (या यहाँ टैप करें)</span>
           </div>
         </div>
       </div>
