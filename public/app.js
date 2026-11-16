@@ -22,13 +22,28 @@
     isPlayingAudio: false,
     audioInitialized: false,
     bestVoice: null,
-    voiceProfileIndex: 0
+    activeVoicePersona: localStorage.getItem('aaira_voice_persona') || 'aaira',
+    voiceProfileIndex: localStorage.getItem('aaira_voice_persona') === 'vihuhuhu' ? 1 : 0
   };
 
+  // Premium Natural AI Voices Matching User Persona Directives:
+  // AAIRA: Natural, friendly, intelligent female AI assistant (hi-IN-SwaraNeural)
+  // VIHUHUHU: Natural, confident, clear male voice (hi-IN-MadhurNeural)
   const VOICE_PROFILES = [
-    { label: '🌸 Sweet Hindi AI', lang: 'hi', pitch: 1.06, rate: 0.94 },
-    { label: '💎 Neural Companion', lang: 'en', pitch: 1.02, rate: 0.98 },
-    { label: '✨ Cyber Anime AI', lang: 'hi', pitch: 1.18, rate: 1.0 }
+    {
+      id: 'aaira',
+      label: '🌸 AAIRA (Friendly Female)',
+      voice: 'aaira',
+      gender: 'female',
+      lang: 'hi'
+    },
+    {
+      id: 'vihuhuhu',
+      label: '⚡ VIHUHUHU (Confident Male)',
+      voice: 'vihuhuhu',
+      gender: 'male',
+      lang: 'hi'
+    }
   ];
 
   // Guaranteed Local High-Quality Royalty-Free Music
@@ -55,9 +70,11 @@
     // Blast Canvas
     unlockBlastCanvas: document.getElementById('unlockBlastCanvas'),
 
-    // Minimalist Sci-Fi Watermark Status
+    // Minimalist Sci-Fi Watermark Status & Voice Switcher
     statusDot: document.getElementById('statusDot'),
     systemStatusLabel: document.getElementById('systemStatusLabel'),
+    voicePersonaToggleBtn: document.getElementById('voicePersonaToggleBtn'),
+    currentVoicePersonaLabel: document.getElementById('currentVoicePersonaLabel'),
 
     // Center Quantum AI Core (AUI)
     mainAIOralCanvas: document.getElementById('mainAIOralCanvas'),
@@ -1201,17 +1218,44 @@
 
 
   // ========================================================
-  // 5. STUDIO QUALITY NEURAL AUDIO TTS & VOICE PROFILES
-  // (Pure Sweet Studio Neural Voice from /api/tts - NO robotic keyboard voice!)
+  // 5. PREMIUM NATURAL AI ASSISTANT VOICES (AZURE NEURAL TTS)
+  // AAIRA: Natural, friendly, intelligent female AI assistant (hi-IN-SwaraNeural)
+  // VIHUHUHU: Natural, confident, clear male voice (hi-IN-MadhurNeural)
   // ========================================================
-  function cycleVoiceProfile() {
-    state.voiceProfileIndex = (state.voiceProfileIndex + 1) % VOICE_PROFILES.length;
-    const current = VOICE_PROFILES[state.voiceProfileIndex];
-    if (DOM.voiceProfileLabel) {
-      DOM.voiceProfileLabel.textContent = `Voice: ${current.label}`;
+  function setVoicePersona(id) {
+    const isMale = (id === 'vihuhuhu' || id === 'male');
+    state.activeVoicePersona = isMale ? 'vihuhuhu' : 'aaira';
+    state.voiceProfileIndex = isMale ? 1 : 0;
+    try {
+      localStorage.setItem('aaira_voice_persona', state.activeVoicePersona);
+    } catch (_) {}
+
+    updateVoicePersonaUI();
+
+    if (isMale) {
+      speakText('नमस्ते मास्टर, मैं विहुहुहु हूँ। आपकी नेचुरल और कॉन्फिडेंट आवाज़ तैयार है!');
+    } else {
+      speakText('जी मास्टर, मैं आपकी आएरा हूँ। आपकी नेचुरल और फ्रेंडली एआई असिस्टेंट!');
     }
-    playTone(920, 0.12, 'sine', 0.2);
-    speakText(`जी मास्टर विहुहुहु, मैंने आवाज़ बदल दी है। अब यह ${current.label} मोड है।`);
+  }
+
+  function toggleVoicePersona() {
+    const next = state.activeVoicePersona === 'aaira' ? 'vihuhuhu' : 'aaira';
+    setVoicePersona(next);
+  }
+
+  function updateVoicePersonaUI() {
+    const current = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
+    if (DOM.currentVoicePersonaLabel) {
+      DOM.currentVoicePersonaLabel.textContent = current.id === 'vihuhuhu' ? 'VIHUHUHU (Male)' : 'AAIRA (Female)';
+    }
+    if (DOM.voicePersonaToggleBtn) {
+      DOM.voicePersonaToggleBtn.className = `voice-persona-badge ${current.id}`;
+    }
+  }
+
+  function cycleVoiceProfile() {
+    toggleVoicePersona();
   }
 
   function speakText(rawText, onDone = null) {
@@ -1288,10 +1332,11 @@
         }, 200);
       };
 
-      // 1. Studio-Quality Neural Audio Stream from /api/tts (ONLY sweet studio neural voice!)
+      // 1. Studio-Quality Azure Neural Voice Stream from /api/tts (AAIRA / VIHUHUHU)
       const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
-      const lang = profile.lang || 'hi';
-      const audioUrl = `/api/tts?text=${encodeURIComponent(clean)}&lang=${encodeURIComponent(lang)}`;
+      const voiceParam = profile.voice || state.activeVoicePersona || 'aaira';
+      const langParam = profile.lang || 'hi';
+      const audioUrl = `/api/tts?text=${encodeURIComponent(clean)}&voice=${encodeURIComponent(voiceParam)}&lang=${encodeURIComponent(langParam)}`;
       const audio = new Audio(audioUrl);
       state.currentAudioTTS = audio;
 
@@ -1702,13 +1747,31 @@
       return;
     }
 
-    // Command 6: VOICE CHANGE COMMAND ("Voice badlo" / "Aawaz badlo")
+    // Command 6: VOICE PERSONA SWITCHING ("VIHUHUHU voice karo" / "AAIRA voice karo" / "Awaaz badlo")
+    if (
+      lower.includes('vihuhuhu voice') || lower.includes('vihuhu voice') || lower.includes('male voice') ||
+      lower.includes('purush voice') || lower.includes('ladke ki voice') || lower.includes('ladke ki awaaz') ||
+      lower.includes('purush awaaz')
+    ) {
+      setVoicePersona('vihuhuhu');
+      return;
+    }
+
+    if (
+      lower.includes('aaira voice') || lower.includes('female voice') || lower.includes('stree voice') ||
+      lower.includes('ladki ki voice') || lower.includes('ladki ki awaaz') || lower.includes('sweet voice') ||
+      lower.includes('stree awaaz')
+    ) {
+      setVoicePersona('aaira');
+      return;
+    }
+
     if (
       lower.includes('voice badlo') || lower.includes('aawaz badlo') || lower.includes('awaaz badlo') ||
       lower.includes('awaj badlo') || lower.includes('voice change') || lower.includes('change voice') ||
       lower.includes('aawaz change') || lower.includes('awaaz change') || lower.includes('आवाज बदलो')
     ) {
-      cycleVoiceProfile();
+      toggleVoicePersona();
       return;
     }
 
@@ -2437,6 +2500,14 @@
       DOM.auiShapeBadge.addEventListener('click', cycleNextShape);
     }
 
+    // Voice Persona Switcher Badge Click
+    if (DOM.voicePersonaToggleBtn) {
+      DOM.voicePersonaToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleVoicePersona();
+      });
+    }
+
     // Close Background Toast
     if (DOM.bgToastClose) {
       DOM.bgToastClose.addEventListener('click', () => {
@@ -2455,6 +2526,7 @@
 
   function initCompanionFeatures() {
     initThreeDCore();
+    updateVoicePersonaUI();
     initSpeechRecognition();
     startListening();
     initMusicPlayer();

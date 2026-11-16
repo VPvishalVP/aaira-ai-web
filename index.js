@@ -136,7 +136,16 @@ Whenever the user asks you to build, create, design, or code ANY game, web app, 
 
 === CHAT & KNOWLEDGE ===
 - For questions, tutorials, ideas, advice, storytelling, or poetry: Provide deeply insightful, engaging, and affectionate replies.
-- Always address Master VIHUHUHU with immense loyalty and warmth.`;
+- Always address Master VIHUHUHU with immense loyalty and warmth.
+
+=== NATURAL AI ASSISTANT VOICE GUIDELINES ===
+- Speak like an intelligent, friendly, natural AI assistant.
+- Sound natural, clear, smooth, and human-like with proper Hindi and English pronunciation.
+- Maintain a consistent, charming voice identity.
+- Avoid robotic, mechanical, repetitive, or monotonous speech.
+- Use natural conversational pauses and realistic speaking rhythm.
+- Speak with appropriate warmth, emotion, and expression.
+- Keep spoken conversational responses concise (1 to 3 natural sentences unless asked for an in-depth explanation or code).`;
 
 app.post('/api/chat', async (req, res) => {
   try {
@@ -368,38 +377,90 @@ Provide an ultra-sharp, insightful, practical, concise research brief in Hindi/H
   }
 });
 
-// ==================== HIGH-QUALITY STUDIO NEURAL TTS ====================
-// Pure studio-quality neural voice stream, NOT keyboard TTS!
+// ==================== PREMIUM NATURAL NEURAL TTS ENGINE ====================
+// Uses Microsoft Azure Neural Speech via msedge-tts (hi-IN-SwaraNeural & hi-IN-MadhurNeural)
+// Pure human-like, friendly, smooth AI assistant voice - NOT robotic text-to-speech!
+const { MsEdgeTTS, OUTPUT_FORMAT } = require('msedge-tts');
 const https = require('https');
 
-app.get('/api/tts', (req, res) => {
+const ttsCache = new Map();
+const MAX_CACHE_SIZE = 120;
+
+async function generateNeuralTTS(text, voiceType = 'aaira') {
+  const normVoice = (voiceType || 'aaira').toLowerCase();
+  const cacheKey = `${normVoice}_${text}`;
+
+  if (ttsCache.has(cacheKey)) {
+    return ttsCache.get(cacheKey);
+  }
+
+  // Voice Persona Matching User Requirements:
+  // AAIRA: Natural, friendly female AI assistant voice (hi-IN-SwaraNeural)
+  // VIHUHUHU: Natural, confident male voice (hi-IN-MadhurNeural)
+  let voiceName = 'hi-IN-SwaraNeural';
+  let prosodyOptions = { pitch: '+2Hz', rate: '+2%', volume: '+0%' };
+
+  if (normVoice === 'vihuhuhu' || normVoice === 'male' || normVoice === 'madhur') {
+    voiceName = 'hi-IN-MadhurNeural';
+    prosodyOptions = { pitch: '-1Hz', rate: '+1%', volume: '+0%' };
+  } else {
+    voiceName = 'hi-IN-SwaraNeural';
+    prosodyOptions = { pitch: '+2Hz', rate: '+2%', volume: '+0%' };
+  }
+
+  const tts = new MsEdgeTTS();
+  await tts.setMetadata(voiceName, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+  const { audioStream } = tts.toStream(text, prosodyOptions);
+
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    audioStream.on('data', chunk => chunks.push(chunk));
+    audioStream.on('end', () => {
+      const buffer = Buffer.concat(chunks);
+      if (ttsCache.size >= MAX_CACHE_SIZE) {
+        const first = ttsCache.keys().next().value;
+        ttsCache.delete(first);
+      }
+      ttsCache.set(cacheKey, buffer);
+      resolve(buffer);
+    });
+    audioStream.on('error', err => reject(err));
+  });
+}
+
+app.get('/api/tts', async (req, res) => {
   try {
-    const text = (req.query.text || '').toString().slice(0, 300).trim();
+    const text = (req.query.text || '').toString().slice(0, 500).trim();
+    const voiceType = (req.query.voice || 'aaira').toString().toLowerCase();
     const lang = (req.query.lang || 'hi').toString();
+
     if (!text) {
       return res.status(400).send('Text required');
     }
 
-    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${encodeURIComponent(lang)}&client=tw-ob`;
-
-    const request = https.get(ttsUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': 'https://translate.google.com/'
-      }
-    }, (ttsRes) => {
-      if (ttsRes.statusCode !== 200) {
-        return res.status(ttsRes.statusCode).end();
-      }
+    try {
+      const audioBuffer = await generateNeuralTTS(text, voiceType);
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Cache-Control', 'public, max-age=86400');
-      ttsRes.pipe(res);
-    });
-
-    request.on('error', (err) => {
-      console.warn('[TTS Error]', err.message);
-      res.status(500).end();
-    });
+      return res.send(audioBuffer);
+    } catch (neuralErr) {
+      console.warn('[Neural TTS Fallback to Google]', neuralErr.message);
+      const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${encodeURIComponent(lang)}&client=tw-ob`;
+      const request = https.get(ttsUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://translate.google.com/'
+        }
+      }, (ttsRes) => {
+        if (ttsRes.statusCode !== 200) {
+          return res.status(ttsRes.statusCode).end();
+        }
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        ttsRes.pipe(res);
+      });
+      request.on('error', () => res.status(500).end());
+    }
   } catch (err) {
     res.status(500).end();
   }
