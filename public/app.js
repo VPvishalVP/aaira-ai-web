@@ -299,7 +299,12 @@
     }
   }
 
+  let lastOrbClickTime = 0;
   function handleMainOrbClick() {
+    const now = Date.now();
+    if (now - lastOrbClickTime < 400) return;
+    lastOrbClickTime = now;
+
     primeMobileMedia();
 
     if (!state.unlocked) {
@@ -678,40 +683,93 @@
     }
   }
 
-  // 3D Drag & Touch Rotate Interaction
+  // 3D Finger & Mouse Drag Interaction (360° Touch Control)
   let isDragging3D = false;
-  let prevPointerX = 0;
-  let prevPointerY = 0;
+  let startTouchX = 0;
+  let startTouchY = 0;
+  let prevTouchX = 0;
+  let prevTouchY = 0;
+  let touchStartTime = 0;
+  let totalDragDist = 0;
   let rotSpeedX = 0;
   let rotSpeedY = 0;
 
   function setup3DDragInteraction() {
-    const target = DOM.mainOrbWrapper || DOM.mainAIOralCanvas;
+    const target = DOM.mainAIOralCanvas || DOM.mainOrbWrapper;
     if (!target) return;
 
-    target.addEventListener('pointerdown', (e) => {
+    function onPointerStart(clientX, clientY) {
+      primeMobileMedia();
       isDragging3D = true;
-      prevPointerX = e.clientX;
-      prevPointerY = e.clientY;
+      startTouchX = clientX;
+      startTouchY = clientY;
+      prevTouchX = clientX;
+      prevTouchY = clientY;
+      touchStartTime = Date.now();
+      totalDragDist = 0;
       rotSpeedX = 0;
       rotSpeedY = 0;
+    }
+
+    function onPointerMove(clientX, clientY) {
+      if (!isDragging3D || !threeGroup) return;
+      const dx = clientX - prevTouchX;
+      const dy = clientY - prevTouchY;
+      prevTouchX = clientX;
+      prevTouchY = clientY;
+
+      totalDragDist += Math.abs(dx) + Math.abs(dy);
+
+      // Sensitive 3D rotation tracking finger
+      threeGroup.rotation.y += dx * 0.012;
+      threeGroup.rotation.x += dy * 0.012;
+
+      rotSpeedY = dx * 0.005;
+      rotSpeedX = dy * 0.005;
+    }
+
+    function onPointerEnd() {
+      if (!isDragging3D) return;
+      isDragging3D = false;
+      const duration = Date.now() - touchStartTime;
+
+      // If user tapped without dragging (< 12px move & < 350ms)
+      if (totalDragDist < 12 && duration < 350) {
+        handleMainOrbClick();
+      }
+    }
+
+    // Touch events for Mobile Phones (Silky finger control)
+    target.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches[0]) {
+        onPointerStart(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+      if (isDragging3D && e.touches && e.touches[0]) {
+        onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+        if (totalDragDist > 8 && e.cancelable) {
+          e.preventDefault();
+        }
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => {
+      onPointerEnd();
+    }, { passive: true });
+
+    // Pointer events for Desktop Mouse / Stylus
+    target.addEventListener('pointerdown', (e) => {
+      onPointerStart(e.clientX, e.clientY);
     });
 
     window.addEventListener('pointermove', (e) => {
-      if (!isDragging3D || !threeGroup) return;
-      const dx = e.clientX - prevPointerX;
-      const dy = e.clientY - prevPointerY;
-      prevPointerX = e.clientX;
-      prevPointerY = e.clientY;
-
-      threeGroup.rotation.y += dx * 0.008;
-      threeGroup.rotation.x += dy * 0.008;
-      rotSpeedY = dx * 0.004;
-      rotSpeedX = dy * 0.004;
+      onPointerMove(e.clientX, e.clientY);
     });
 
     window.addEventListener('pointerup', () => {
-      isDragging3D = false;
+      onPointerEnd();
     });
   }
 
@@ -1045,7 +1103,9 @@
       if (!clean) clean = "जी मास्टर विहुहुहु, मैंने काम कर दिया है!";
 
       state.isSpeaking = true;
-      DOM.mainOrbBtn.classList.add('speaking');
+      if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.add('speaking');
+      if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.add('speaking');
+      if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.add('speaking');
       if (DOM.voiceRecorderStream) {
         DOM.voiceRecorderStream.classList.add('speaking');
       }
@@ -1066,7 +1126,9 @@
         if (finished) return;
         finished = true;
         state.isSpeaking = false;
-        DOM.mainOrbBtn.classList.remove('speaking');
+        if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.remove('speaking');
+        if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.remove('speaking');
+        if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.remove('speaking');
         if (DOM.voiceRecorderStream) {
           DOM.voiceRecorderStream.classList.remove('speaking');
         }
@@ -1117,6 +1179,90 @@
   // ========================================================
   let speechRecognizer = null;
 
+  function checkAndHandleMorphCommand(text) {
+    const lower = text.toLowerCase().trim();
+
+    // 1. CUBE / TESSERACT ("Cube banao", "Dabba banao", "Matrix karo")
+    if (lower.includes('cube') || lower.includes('box') || lower.includes('dabba') || lower.includes('matrix') || lower.includes('tesseract') || lower.includes('क्यूब') || lower.includes('डब्बा')) {
+      morphTo3DShape('CUBE');
+      return true;
+    }
+
+    // 2. SPHERE / BALL / GOLA ("Sphere banao", "Gola banao", "Ball karo")
+    if (lower.includes('sphere') || lower.includes('gola') || lower.includes('round') || lower.includes('ball') || lower.includes('default aui') || lower.includes('गोला')) {
+      morphTo3DShape('SPHERE');
+      return true;
+    }
+
+    // 3. TORUS / RING / CHAKRA ("Ring banao", "Chakra banao", "Donut karo")
+    if (lower.includes('ring') || lower.includes('chakra') || lower.includes('torus') || lower.includes('donut') || lower.includes('chhalla') || lower.includes('रिंग') || lower.includes('चक्र')) {
+      morphTo3DShape('TORUS');
+      return true;
+    }
+
+    // 4. CRYSTAL / DIAMOND / HEERA ("Crystal banao", "Diamond banao", "Heera karo")
+    if (lower.includes('crystal') || lower.includes('diamond') || lower.includes('heera') || lower.includes('gem') || lower.includes('हीरा') || lower.includes('क्रिस्टल')) {
+      morphTo3DShape('CRYSTAL');
+      return true;
+    }
+
+    // 5. BLACK HOLE / VORTEX / GALAXY ("Black hole banao", "Vortex karo", "Galaxy banao")
+    if (lower.includes('black hole') || lower.includes('vortex') || lower.includes('galaxy') || lower.includes('tornado') || lower.includes('bhanwar') || lower.includes('singularity') || lower.includes('ब्लैक होल')) {
+      morphTo3DShape('VORTEX');
+      return true;
+    }
+
+    // 6. DNA / HELIX ("DNA banao", "Helix karo", "Spiral banao")
+    if (lower.includes('dna') || lower.includes('helix') || lower.includes('spiral') || lower.includes('tarang') || lower.includes('डीएनए')) {
+      morphTo3DShape('DNA');
+      return true;
+    }
+
+    // 7. HEART / DIL ("Dil banao", "Heart karo")
+    if (lower.includes('heart') || lower.includes('dil') || lower.includes('love') || lower.includes('दिल')) {
+      morphTo3DShape('HEART');
+      return true;
+    }
+
+    // 8. COLOR SHIFTS
+    if (lower.includes('golden') || lower.includes('gold') || lower.includes('peela') || lower.includes('पीला') || lower.includes('गोल्डन')) {
+      setAUIColor('#ffd700', 'गोल्डन (Gold)');
+      return true;
+    }
+    if (lower.includes('green') || lower.includes('hara') || lower.includes('हरा') || lower.includes('ग्रीन')) {
+      setAUIColor('#00ff88', 'एमराल्ड ग्रीन (Green)');
+      return true;
+    }
+    if (lower.includes('red') || lower.includes('lal') || lower.includes('लाल') || lower.includes('रेड')) {
+      setAUIColor('#ff0033', 'रेड अलर्ट (Red)');
+      return true;
+    }
+    if (lower.includes('pink') || lower.includes('gulabi') || lower.includes('गुलाबी') || lower.includes('पिंक')) {
+      setAUIColor('#ff007f', 'सिंथवेव पिंक (Pink)');
+      return true;
+    }
+    if (lower.includes('blue') || lower.includes('neela') || lower.includes('cyan') || lower.includes('नीला') || lower.includes('ब्लू')) {
+      setAUIColor('#00f0ff', 'साइबर नियॉन ब्लू (Cyan)');
+      return true;
+    }
+    if (lower.includes('purple') || lower.includes('baingani') || lower.includes('violet') || lower.includes('बैंगनी')) {
+      setAUIColor('#a855f7', 'डीप स्पेस वॉयलेट (Purple)');
+      return true;
+    }
+
+    // 9. CYCLE / ANY MORPH ("AUI badlo", "Shape badlo", "Aisa aui karo", "Vaisa aui karo")
+    if (
+      lower.includes('badlo') || lower.includes('badal') || lower.includes('change') ||
+      lower.includes('aisa aui') || lower.includes('vaisa aui') || lower.includes('aaisa') ||
+      lower.includes('roop') || lower.includes('next') || lower.includes('बदलो') || lower.includes('बदल')
+    ) {
+      cycleNextShape();
+      return true;
+    }
+
+    return false;
+  }
+
   function initSpeechRecognition() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
@@ -1141,14 +1287,9 @@
 
     speechRecognizer.onstart = () => {
       state.isListening = true;
-      DOM.mainOrbBtn.classList.add('listening');
-      if (DOM.voiceRecorderStream) {
-        DOM.voiceRecorderStream.classList.remove('speaking');
-        DOM.voiceRecorderStream.classList.add('active');
-      }
-      if (DOM.recStatusLabel) {
-        DOM.recStatusLabel.textContent = '🟢 24/7 VOICE RECORDER ACTIVE';
-      }
+      if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.add('listening');
+      if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.add('listening');
+      if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.add('listening');
       if (DOM.stageDialogueState) {
         DOM.stageDialogueState.textContent = '🟢 24/7 LISTENING TO MASTER...';
       }
@@ -1161,14 +1302,41 @@
       const transcript = last[0].transcript.trim();
       if (!transcript) return;
 
+      // 1. Check if user is giving an AUI Morph or Color command!
+      // This works ANYTIME, even if not unlocked yet!
+      if (checkAndHandleMorphCommand(transcript)) {
+        if (!state.unlocked) {
+          state.unlocked = true;
+          if (DOM.authCodeBadge) DOM.authCodeBadge.classList.add('hidden');
+          if (DOM.statusDot) {
+            DOM.statusDot.classList.remove('standby');
+            DOM.statusDot.classList.add('online');
+          }
+          if (DOM.systemStatusLabel) {
+            DOM.systemStatusLabel.textContent = 'ONLINE • 24/7 ACTIVE • MASTER VIHUHUHU';
+          }
+        }
+        return;
+      }
+
       if (!state.unlocked) {
         // Voice verification of the secret random code!
         if (verifySpokenAuthCode(transcript)) {
           authorizeMaster();
         } else {
-          const failMsg = `कोड: [ ${state.activeAuthCode} ] बोलें`;
-          updateDialogue(transcript, failMsg);
-          speakText(`कोड मैच नहीं हुआ। कृपया कोड बोलिए।`);
+          // If user gives a direct command like "song chalao" or "game banao", auto-authorize!
+          const lower = transcript.toLowerCase();
+          if (
+            lower.includes('song') || lower.includes('gaana') || lower.includes('video') ||
+            lower.includes('banao') || lower.includes('calculator') || lower.includes('game')
+          ) {
+            authorizeMaster();
+            dispatchVoiceCommand(transcript);
+          } else {
+            const failMsg = `कोड: [ ${state.activeAuthCode} ] बोलें`;
+            updateDialogue(transcript, failMsg);
+            speakText(`कोड मैच नहीं हुआ। कृपया कोड बोलिए।`);
+          }
         }
       } else {
         dispatchVoiceCommand(transcript);
@@ -1193,7 +1361,9 @@
 
     speechRecognizer.onend = () => {
       state.isListening = false;
-      DOM.mainOrbBtn.classList.remove('listening');
+      if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.remove('listening');
+      if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.remove('listening');
+      if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.remove('listening');
       // 24/7 Ambient Auto-Restart on Mobile/Desktop!
       if (state.unlocked && state.is24x7Active && !state.isSpeaking) {
         setTimeout(() => {
@@ -1217,7 +1387,9 @@
 
   function stopListening() {
     state.isListening = false;
-    DOM.mainOrbBtn.classList.remove('listening');
+    if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.remove('listening');
+    if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.remove('listening');
+    if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.remove('listening');
     if (DOM.stageDialogueState) {
       DOM.stageDialogueState.textContent = state.unlocked ? '🟢 24/7 ACTIVE' : 'STANDBY • TAP CORE TO ACTIVATE';
     }
@@ -1959,7 +2131,15 @@
   // ========================================================
   function setupEventListeners() {
     // Secret Center Click on Core: Generates Auth Code when locked, or toggles mic when unlocked
-    DOM.mainOrbBtn.addEventListener('click', handleMainOrbClick);
+    if (DOM.mainOrbBtn) {
+      DOM.mainOrbBtn.addEventListener('click', handleMainOrbClick);
+    }
+    if (DOM.mainAIOralCanvas) {
+      DOM.mainAIOralCanvas.addEventListener('click', handleMainOrbClick);
+    }
+    if (DOM.mainOrbWrapper) {
+      DOM.mainOrbWrapper.addEventListener('click', handleMainOrbClick);
+    }
 
     // Tapping the Secret Code Badge quick-authorizes as fallback
     if (DOM.authCodeBadge) {
