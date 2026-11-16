@@ -21,6 +21,7 @@
     currentTrackIndex: 0,
     isPlayingAudio: false,
     audioInitialized: false,
+    voiceCallActive: false,
     bestVoice: null,
     activeVoicePersona: localStorage.getItem('aaira_voice_persona') || 'aaira',
     voiceProfileIndex: localStorage.getItem('aaira_voice_persona') === 'vihuhuhu' ? 1 : 0
@@ -77,9 +78,16 @@
     currentVoicePersonaLabel: document.getElementById('currentVoicePersonaLabel'),
 
     // Center Quantum AI Core (AUI)
+    mainOrbWrapper: document.getElementById('mainOrbWrapper'),
     mainAIOralCanvas: document.getElementById('mainAIOralCanvas'),
     mainOrbBtn: document.getElementById('mainOrbBtn'),
     aiCoreNucleus: document.getElementById('aiCoreNucleus'),
+
+    // Live Voice Call & Drag Controls
+    voiceCallTriggerBtn: document.getElementById('voiceCallTriggerBtn'),
+    voiceCallBtnLabel: document.getElementById('voiceCallBtnLabel'),
+    voiceCallBtnIcon: document.getElementById('voiceCallBtnIcon'),
+    resetAuiPosBtn: document.getElementById('resetAuiPosBtn'),
 
     // Secret Authorization Pod
     authCodeBadge: document.getElementById('authCodeBadge'),
@@ -294,55 +302,30 @@
   }
 
   // ========================================================
-  // 3. SECRET CENTER-CLICK AUTHORIZATION ENGINE
-  // ("ye bas mujhe pata hoga ki bich me click karne pe cod aata hai")
+  // 3. ZERO-CONFLICT MICROPHONE & DIRECT VOICE CALL ENGINE
+  // (Zero mic conflict: No getUserMedia holding the hardware device!
+  //  Google SpeechRecognition gets 100% exclusive access)
   // ========================================================
-  // ========================================================
-  // 3. REAL HARDWARE MICROPHONE STREAM & ACOUSTIC ANALYSER
-  // (Continuous Real Mic Stream with Web Audio Analyser & Real Voice Reactivity)
-  // ========================================================
+  let sharedAudioTTS = null;
   let micStream = null;
   let micAudioCtx = null;
-  let micAnalyser = null;
-  let micDataArray = null;
-  let realMicVolume = 0;
 
-  async function initRealMicrophone() {
-    if (micStream && micStream.active) return true;
-
+  function releaseHardwareMic() {
+    // Ensures NO getUserMedia track locks the microphone device in Chrome
     try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!micAudioCtx && AudioCtx) {
-        micAudioCtx = new AudioCtx();
-      }
-      if (micAudioCtx && micAudioCtx.state === 'suspended') {
-        await micAudioCtx.resume();
-      }
-
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        micStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          }
+      if (micStream) {
+        micStream.getTracks().forEach(t => {
+          try { t.stop(); } catch (_) {}
         });
-
-        if (micAudioCtx) {
-          const source = micAudioCtx.createMediaStreamSource(micStream);
-          micAnalyser = micAudioCtx.createAnalyser();
-          micAnalyser.fftSize = 128;
-          micAnalyser.smoothingTimeConstant = 0.5;
-          source.connect(micAnalyser);
-          micDataArray = new Uint8Array(micAnalyser.frequencyBinCount);
-        }
-        return true;
+        micStream = null;
       }
-    } catch (err) {
-      console.warn('[Real Mic Stream Permission Error]', err);
-      return false;
-    }
-    return false;
+    } catch (_) {}
+    try {
+      if (micAudioCtx) {
+        micAudioCtx.close().catch(() => {});
+        micAudioCtx = null;
+      }
+    } catch (_) {}
   }
 
   function primeMobileMedia() {
@@ -357,49 +340,130 @@
       }
     } catch(_) {}
 
-    // 2. HTML5 Audio Unlock
+    // 2. HTML5 Audio Unlock & Pre-prime shared audio element
     try {
-      const silent = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
-      silent.play().catch(() => {});
+      if (!sharedAudioTTS) {
+        sharedAudioTTS = new Audio();
+      }
+      sharedAudioTTS.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+      sharedAudioTTS.play().catch(() => {});
     } catch(_) {}
 
-    // 3. Keep real microphone stream active (Hardware mic indicator on)
-    initRealMicrophone();
+    // 3. Free up microphone so Google SpeechRecognition is never blocked
+    releaseHardwareMic();
+  }
+
+  function startVoiceConversationMode() {
+    state.voiceCallActive = true;
+    state.unlocked = true;
+    primeMobileMedia();
+    releaseHardwareMic();
+
+    if (DOM.voiceCallTriggerBtn) {
+      DOM.voiceCallTriggerBtn.classList.add('active-call');
+      if (DOM.voiceCallBtnLabel) {
+        DOM.voiceCallBtnLabel.textContent = '🟢 बातचीत चालू है • बोलिए (Tap to Stop)';
+      }
+      if (DOM.voiceCallBtnIcon) {
+        DOM.voiceCallBtnIcon.className = 'fa-solid fa-microphone';
+      }
+    }
+
+    if (DOM.statusDot) {
+      DOM.statusDot.classList.remove('standby');
+      DOM.statusDot.classList.add('online');
+    }
+    if (DOM.systemStatusLabel) {
+      DOM.systemStatusLabel.textContent = 'ONLINE • VOICE CALL ACTIVE • MASTER VIHUHUHU';
+    }
+    if (DOM.auiQuickActions) {
+      DOM.auiQuickActions.classList.remove('hidden');
+    }
+
+    playUnlockChord();
+
+    // Natural Verbal Greeting matching chosen persona
+    const isMale = (state.activeVoicePersona === 'vihuhuhu');
+    const greeting = isMale
+      ? 'नमस्ते मास्टर! मैं विहुहुहु हूँ। मैं सुन रहा हूँ, बताइए क्या सेवा करूँ?'
+      : 'नमस्ते मास्टर विहुहुहु! मैं आपकी बात सुन रही हूँ, बताइए क्या बात करनी है?';
+
+    updateDialogue('Voice Started', greeting);
+    speakText(greeting, () => {
+      // Once greeting completes, listen immediately
+      startListening();
+    });
+  }
+
+  function stopVoiceConversationMode() {
+    state.voiceCallActive = false;
+    if (sharedAudioTTS) {
+      try { sharedAudioTTS.pause(); } catch(_) {}
+    }
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch(_) {}
+    }
+    state.isSpeaking = false;
+    stopListening();
+
+    if (DOM.voiceCallTriggerBtn) {
+      DOM.voiceCallTriggerBtn.classList.remove('active-call');
+      if (DOM.voiceCallBtnLabel) {
+        DOM.voiceCallBtnLabel.textContent = 'Tap to Talk • वॉयस कॉल शुरू करें';
+      }
+      if (DOM.voiceCallBtnIcon) {
+        DOM.voiceCallBtnIcon.className = 'fa-solid fa-microphone-lines';
+      }
+    }
+
+    if (DOM.stageDialogueState) {
+      DOM.stageDialogueState.textContent = 'STANDBY • TAP TO TALK • बोलिए, मैं सुन रही हूँ 🌸';
+    }
+  }
+
+  function toggleVoiceConversationMode() {
+    if (state.voiceCallActive) {
+      stopVoiceConversationMode();
+    } else {
+      startVoiceConversationMode();
+    }
   }
 
   let lastOrbClickTime = 0;
   function handleMainOrbClick() {
     const now = Date.now();
-    if (now - lastOrbClickTime < 400) return;
+    if (now - lastOrbClickTime < 350) return;
     lastOrbClickTime = now;
 
     primeMobileMedia();
 
-    if (!state.unlocked) {
-      // Secret Master Authorization Trigger (Silent display, no speech!)
-      generateSecretAuthCode();
+    if (!state.voiceCallActive) {
+      startVoiceConversationMode();
     } else {
-      // Voice must never stop: ensure listening is active
-      startListening();
+      if (state.isSpeaking) {
+        // Barge-in: user tapped core to interrupt AI speech and speak immediately
+        if (sharedAudioTTS) {
+          try { sharedAudioTTS.pause(); } catch(_) {}
+        }
+        if ('speechSynthesis' in window) {
+          try { window.speechSynthesis.cancel(); } catch(_) {}
+        }
+        state.isSpeaking = false;
+        startListening();
+      } else {
+        startListening();
+      }
     }
   }
 
   function generateSecretAuthCode() {
-    // Generate fresh 3-digit random numeric code
     const code = Math.floor(100 + Math.random() * 900).toString();
     state.activeAuthCode = code;
-
-    // Display in the floating holographic pod silently (AI does not speak!)
-    DOM.authDigit0.textContent = code[0];
-    DOM.authDigit1.textContent = code[1];
-    DOM.authDigit2.textContent = code[2];
-    DOM.authVoiceHintText.textContent = `बोलिए: "${code[0]} ${code[1]} ${code[2]}"`;
-    DOM.authCodeBadge.classList.remove('hidden');
-
-    const promptMsg = `ऑथराइजेशन कोड: <strong>${code}</strong> (कृपया बोलिए: "${code}")`;
-    updateDialogue("Auth Code", promptMsg);
-
-    // AI does NOT speak! Direct user speaks the 3-digit code into the microphone!
+    if (DOM.authDigit0) DOM.authDigit0.textContent = code[0];
+    if (DOM.authDigit1) DOM.authDigit1.textContent = code[1];
+    if (DOM.authDigit2) DOM.authDigit2.textContent = code[2];
+    if (DOM.authVoiceHintText) DOM.authVoiceHintText.textContent = `बोलिए: "${code[0]} ${code[1]} ${code[2]}"`;
+    if (DOM.authCodeBadge) DOM.authCodeBadge.classList.remove('hidden');
     startListening();
   }
 
@@ -780,16 +844,48 @@
     } catch (_) {}
   }
 
+  let auiPos = { x: 0, y: 0 };
+  let lastTapTime = 0;
+
+  function initAUIPosition() {
+    try {
+      const saved = localStorage.getItem('aaira_aui_pos');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          auiPos.x = parsed.x;
+          auiPos.y = parsed.y;
+          if (DOM.mainOrbWrapper) {
+            DOM.mainOrbWrapper.style.transform = `translate3d(${auiPos.x}px, ${auiPos.y}px, 0)`;
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  function resetAUIPosition() {
+    auiPos = { x: 0, y: 0 };
+    if (DOM.mainOrbWrapper) {
+      DOM.mainOrbWrapper.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
+      DOM.mainOrbWrapper.style.transform = 'translate3d(0px, 0px, 0)';
+      setTimeout(() => {
+        if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.style.transition = '';
+      }, 450);
+    }
+    try { localStorage.removeItem('aaira_aui_pos'); } catch (_) {}
+  }
+
   function setup3DDragInteraction() {
     const target = DOM.mainAIOralCanvas || DOM.mainOrbWrapper;
     if (!target) return;
 
-    // Apply saved zoom immediately
+    // Apply saved zoom and position immediately
     set3DZoom(current3DZoom);
+    initAUIPosition();
 
     function onPointerStart(clientX, clientY) {
       primeMobileMedia();
-      userHasRotated3D = true; // User took manual control
+      userHasRotated3D = true;
       isDragging3D = true;
       startTouchX = clientX;
       startTouchY = clientY;
@@ -799,10 +895,11 @@
       totalDragDist = 0;
       rotSpeedX = 0;
       rotSpeedY = 0;
+      if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.add('is-dragging');
     }
 
     function onPointerMove(clientX, clientY) {
-      if (!isDragging3D || !threeGroup) return;
+      if (!isDragging3D) return;
       const dx = clientX - prevTouchX;
       const dy = clientY - prevTouchY;
       prevTouchX = clientX;
@@ -810,26 +907,55 @@
 
       totalDragDist += Math.abs(dx) + Math.abs(dy);
 
-      // Sensitive 3D rotation tracking finger
-      threeGroup.rotation.y += dx * 0.012;
-      threeGroup.rotation.x += dy * 0.012;
+      // Free-floating drag anywhere on the screen! ("jaha chahu vaha chala jaye")
+      auiPos.x += dx;
+      auiPos.y += dy;
 
-      rotSpeedY = dx * 0.005;
-      rotSpeedX = dy * 0.005;
+      const maxW = Math.max(100, (window.innerWidth / 2) - 30);
+      const maxH = Math.max(100, (window.innerHeight / 2) - 30);
+      auiPos.x = Math.max(-maxW, Math.min(maxW, auiPos.x));
+      auiPos.y = Math.max(-maxH, Math.min(maxH, auiPos.y));
+
+      if (DOM.mainOrbWrapper) {
+        DOM.mainOrbWrapper.style.transform = `translate3d(${auiPos.x}px, ${auiPos.y}px, 0)`;
+      }
+
+      // Responsive 3D rotation following drag motion
+      if (threeGroup) {
+        threeGroup.rotation.y += dx * 0.008;
+        threeGroup.rotation.x += dy * 0.008;
+        rotSpeedY = dx * 0.004;
+        rotSpeedX = dy * 0.004;
+      }
     }
 
     function onPointerEnd() {
       if (!isDragging3D) return;
       isDragging3D = false;
+      if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.remove('is-dragging');
       const duration = Date.now() - touchStartTime;
 
-      // If user tapped without dragging (< 12px move & < 350ms)
-      if (totalDragDist < 12 && duration < 350) {
+      const now = Date.now();
+      if (now - lastTapTime < 340 && totalDragDist < 16) {
+        // Double-tap detected: snap smoothly back to center!
+        resetAUIPosition();
+        lastTapTime = 0;
+        return;
+      }
+      lastTapTime = now;
+
+      // If user tapped without dragging (< 14px move & < 350ms): Talk / Voice Call!
+      if (totalDragDist < 14 && duration < 350) {
         handleMainOrbClick();
+      } else {
+        // Dragged to a new location on the screen: persist position!
+        try {
+          localStorage.setItem('aaira_aui_pos', JSON.stringify(auiPos));
+        } catch (_) {}
       }
     }
 
-    // Touch events for Mobile Phones (Silky finger 360° drag + 2-finger pinch zoom)
+    // Touch events for Mobile Phones (Silky finger screen drag + 2-finger pinch zoom)
     target.addEventListener('touchstart', (e) => {
       if (e.touches && e.touches.length === 2) {
         userHasRotated3D = true;
@@ -862,7 +988,7 @@
 
       if (isDragging3D && e.touches && e.touches[0]) {
         onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
-        if (totalDragDist > 8 && e.cancelable) {
+        if (totalDragDist > 6 && e.cancelable) {
           e.preventDefault();
         }
       }
@@ -871,7 +997,6 @@
     window.addEventListener('touchend', (e) => {
       if (isPinching3D && (!e.touches || e.touches.length < 2)) {
         isPinching3D = false;
-        // Zoom level persists indefinitely!
       } else if (isDragging3D) {
         onPointerEnd();
       }
@@ -905,20 +1030,6 @@
 
     const t = Date.now() * 0.001;
 
-    // Read real hardware microphone acoustic frequency data
-    if (micAnalyser && state.isListening && !state.isSpeaking && micDataArray) {
-      micAnalyser.getByteFrequencyData(micDataArray);
-      let sum = 0;
-      for (let i = 0; i < micDataArray.length; i++) {
-        sum += micDataArray[i];
-      }
-      const avg = sum / micDataArray.length;
-      const targetVol = avg / 255;
-      realMicVolume += (targetVol - realMicVolume) * 0.35;
-    } else {
-      realMicVolume *= 0.82;
-    }
-
     // Smooth lerp particle morphing
     if (threeParticleSystem && threeParticleSystem.geometry && threeParticleSystem.geometry.attributes.position) {
       const posAttr = threeParticleSystem.geometry.attributes.position;
@@ -929,31 +1040,30 @@
       posAttr.needsUpdate = true;
     }
 
-    // Acoustic & State Reactivity (Real-Time Voice Volume Reaction like ChatGPT/Gemini)
+    // Dynamic Sci-Fi Audio Reactivity without touching hardware microphone device
     let pulseScale = 1.0;
     if (state.isSpeaking) {
       pulseScale = 1.18 + Math.sin(t * 12) * 0.16;
     } else if (state.isListening) {
-      // Dynamic response to the REAL hardware microphone volume!
-      pulseScale = 1.0 + (realMicVolume * 0.65) + Math.sin(t * 4) * 0.04;
+      pulseScale = 1.07 + Math.sin(t * 7) * 0.07 + Math.sin(t * 13) * 0.03;
     } else {
       pulseScale = 1.0 + Math.sin(t * 2.5) * 0.05;
     }
 
     if (threeCoreMesh) {
       threeCoreMesh.scale.set(pulseScale, pulseScale, pulseScale);
-      threeCoreMesh.rotation.x += 0.015 + realMicVolume * 0.06;
-      threeCoreMesh.rotation.y += 0.02 + realMicVolume * 0.06;
+      threeCoreMesh.rotation.x += 0.015 + (state.isListening ? 0.02 : 0);
+      threeCoreMesh.rotation.y += 0.02 + (state.isListening ? 0.02 : 0);
     }
 
     if (threeOuterRing1) {
-      threeOuterRing1.rotation.z += 0.012 + realMicVolume * 0.05;
-      threeOuterRing1.rotation.x += 0.006 + realMicVolume * 0.03;
+      threeOuterRing1.rotation.z += 0.012 + (state.isListening ? 0.015 : 0);
+      threeOuterRing1.rotation.x += 0.006;
     }
 
     if (threeOuterRing2) {
-      threeOuterRing2.rotation.z -= 0.008 + realMicVolume * 0.05;
-      threeOuterRing2.rotation.y += 0.01 + realMicVolume * 0.03;
+      threeOuterRing2.rotation.z -= 0.008 + (state.isListening ? 0.015 : 0);
+      threeOuterRing2.rotation.y += 0.01;
     }
 
     // User-controlled 3D rotation with smooth inertia (stays fixed where user leaves it!)
@@ -1265,12 +1375,14 @@
     }
 
     // Stop any currently playing audio TTS
-    if (state.currentAudioTTS) {
+    if (sharedAudioTTS) {
       try {
-        state.currentAudioTTS.pause();
-        state.currentAudioTTS.src = '';
+        sharedAudioTTS.pause();
+        sharedAudioTTS.src = '';
       } catch(_) {}
-      state.currentAudioTTS = null;
+    }
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch(_) {}
     }
 
     try {
@@ -1321,36 +1433,58 @@
           DOM.recStatusLabel.textContent = '🟢 24/7 VOICE RECORDER ACTIVE';
         }
         if (DOM.stageDialogueState) {
-          DOM.stageDialogueState.textContent = '🟢 24/7 Mic Active • मास्टर, जो बोलेंगे वो काम होगा';
+          DOM.stageDialogueState.textContent = '🟢 सुन रही हूँ... बोलिए मास्टर विहुहुहु 🌸';
         }
 
         if (onDone) onDone();
 
-        // 24/7 Continuous Hands-Free Listening: immediately resume mic like ChatGPT/Siri!
+        // Continuous Hands-Free: immediately resume mic like ChatGPT / Phone Call!
         setTimeout(() => {
-          if (!state.isSpeaking) startListening();
-        }, 200);
+          if (!state.isSpeaking && (state.unlocked || state.voiceCallActive)) {
+            startListening();
+          }
+        }, 150);
       };
 
-      // 1. Studio-Quality Azure Neural Voice Stream from /api/tts (AAIRA / VIHUHUHU)
       const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
       const voiceParam = profile.voice || state.activeVoicePersona || 'aaira';
       const langParam = profile.lang || 'hi';
-      const audioUrl = `/api/tts?text=${encodeURIComponent(clean)}&voice=${encodeURIComponent(voiceParam)}&lang=${encodeURIComponent(langParam)}`;
-      const audio = new Audio(audioUrl);
-      state.currentAudioTTS = audio;
 
-      audio.onended = onFinish;
-      audio.onerror = () => {
-        console.warn('[Audio TTS playback error]');
-        onFinish();
+      function playViaNativeSpeech() {
+        if ('speechSynthesis' in window) {
+          try {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(clean);
+            utter.lang = 'hi-IN';
+            utter.rate = 1.0;
+            utter.pitch = (voiceParam === 'vihuhuhu' || state.activeVoicePersona === 'vihuhuhu') ? 0.9 : 1.1;
+            utter.onend = onFinish;
+            utter.onerror = onFinish;
+            window.speechSynthesis.speak(utter);
+            return true;
+          } catch (_) {}
+        }
+        return false;
+      }
+
+      // 1. Studio-Quality Azure Neural Voice Stream from /api/tts (AAIRA / VIHUHUHU)
+      const audioUrl = `/api/tts?text=${encodeURIComponent(clean)}&voice=${encodeURIComponent(voiceParam)}&lang=${encodeURIComponent(langParam)}`;
+
+      if (!sharedAudioTTS) sharedAudioTTS = new Audio();
+      state.currentAudioTTS = sharedAudioTTS;
+      sharedAudioTTS.src = audioUrl;
+
+      sharedAudioTTS.onended = onFinish;
+      sharedAudioTTS.onerror = () => {
+        console.warn('[Audio TTS playback error, trying SpeechSynthesis fallback]');
+        if (!playViaNativeSpeech()) onFinish();
       };
 
-      const playPromise = audio.play();
+      const playPromise = sharedAudioTTS.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
-          console.warn('[Audio TTS play promise error]', err);
-          onFinish();
+          console.warn('[Audio TTS play promise error, trying SpeechSynthesis fallback]', err);
+          if (!playViaNativeSpeech()) onFinish();
         });
       }
     } catch (_) {
@@ -1464,7 +1598,6 @@
     } catch(_) {}
 
     speechRecognizer = new SpeechRec();
-    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     speechRecognizer.continuous = true;
     speechRecognizer.interimResults = true;
     speechRecognizer.lang = 'hi-IN';
@@ -1475,7 +1608,7 @@
       if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.add('listening');
       if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.add('listening');
       if (DOM.stageDialogueState) {
-        DOM.stageDialogueState.innerHTML = '🟢 <span style="color:#00f0ff;">24/7 MIC ACTIVE</span> • बोलिए, मैं सुन रही हूँ 🌸';
+        DOM.stageDialogueState.innerHTML = '🟢 <span style="color:#00f0ff;">MIC ACTIVE</span> • बोलिए, मैं सुन रही हूँ 🌸';
       }
     };
 
@@ -1513,13 +1646,23 @@
         }
         return;
       }
-      // Instant auto-restart on silent pause/timeout so voice NEVER stops
-      if (!state.isSpeaking) {
+      if (err.error === 'audio-capture') {
+        // Zero conflict: force release any stray tracks and restart cleanly
+        releaseHardwareMic();
         setTimeout(() => {
-          if (!state.isSpeaking) {
+          if (!state.isSpeaking && (state.unlocked || state.voiceCallActive)) {
             try { speechRecognizer.start(); } catch(_) {}
           }
-        }, 100);
+        }, 300);
+        return;
+      }
+      // Instant auto-restart on silent pause/timeout so voice session continues
+      if (!state.isSpeaking && (state.unlocked || state.voiceCallActive)) {
+        setTimeout(() => {
+          if (!state.isSpeaking && (state.unlocked || state.voiceCallActive)) {
+            try { speechRecognizer.start(); } catch(_) {}
+          }
+        }, 120);
       }
     };
 
@@ -1528,10 +1671,10 @@
       if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.remove('listening');
       if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.remove('listening');
       if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.remove('listening');
-      // 24/7 Continuous Hands-Free: voice NEVER stops!
-      if (!state.isSpeaking) {
+      // Continuous Hands-Free: automatically resume listening so voice never drops
+      if (!state.isSpeaking && (state.unlocked || state.voiceCallActive)) {
         setTimeout(() => {
-          if (!state.isSpeaking) {
+          if (!state.isSpeaking && (state.unlocked || state.voiceCallActive)) {
             try { speechRecognizer.start(); } catch(_) {}
           }
         }, 80);
@@ -1541,37 +1684,32 @@
 
   function handleSpokenInput(transcript) {
     if (!transcript) return;
+    state.voiceCallActive = true;
+    state.unlocked = true;
 
     // 1. Check if user is giving an AUI Morph or Color command!
     if (checkAndHandleMorphCommand(transcript)) {
-      if (!state.unlocked) {
-        authorizeMaster();
-      }
       return;
     }
 
     // 2. Secret 3-digit Code spoken verification
-    if (!state.unlocked && verifySpokenAuthCode(transcript)) {
+    if (verifySpokenAuthCode(transcript)) {
       authorizeMaster();
       return;
     }
 
-    // 3. Natural AI Voice Processing (Exactly like Siri, Google Assistant & ChatGPT)
-    // ANY command, question, or greeting spoken into microphone is heard and executed!
-    if (!state.unlocked) {
-      authorizeMaster();
-    }
+    // 3. Natural AI Voice Processing (conversational & commands)
     dispatchVoiceCommand(transcript);
   }
 
-  async function startListening() {
-    await initRealMicrophone();
+  function startListening() {
+    releaseHardwareMic(); // Make sure NO getUserMedia lock exists!
     if (!speechRecognizer) initSpeechRecognition();
     if (!speechRecognizer) return;
 
     try {
-      if (state.currentAudioTTS) {
-        state.currentAudioTTS.pause();
+      if (sharedAudioTTS) {
+        sharedAudioTTS.pause();
       }
       speechRecognizer.start();
     } catch (_) {}
@@ -2508,6 +2646,22 @@
       });
     }
 
+    // Voice Call Mode Button Click ("ak voice ple klick kar dene pe per bat karta hai")
+    if (DOM.voiceCallTriggerBtn) {
+      DOM.voiceCallTriggerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleVoiceConversationMode();
+      });
+    }
+
+    // Reset AUI Position to screen center
+    if (DOM.resetAuiPosBtn) {
+      DOM.resetAuiPosBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetAUIPosition();
+      });
+    }
+
     // Close Background Toast
     if (DOM.bgToastClose) {
       DOM.bgToastClose.addEventListener('click', () => {
@@ -2515,10 +2669,12 @@
       });
     }
 
-    // 24/7 Always-On Microphone: Any interaction immediately primes mic and keeps it listening
+    // Interaction primes audio and keeps voice session alive without any mic conflict
     const ensureMicListening = () => {
-      initRealMicrophone();
-      startListening();
+      primeMobileMedia();
+      if (state.voiceCallActive && !state.isSpeaking) {
+        startListening();
+      }
     };
     window.addEventListener('click', ensureMicListening, { passive: true });
     window.addEventListener('touchstart', ensureMicListening, { passive: true });
@@ -2528,7 +2684,6 @@
     initThreeDCore();
     updateVoicePersonaUI();
     initSpeechRecognition();
-    startListening();
     initMusicPlayer();
     initVideoPlayer();
     loadCreationsVault();

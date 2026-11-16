@@ -42,24 +42,20 @@
 
     <!-- Center Stage: Majestic Pure 3D Holographic AUI Core -->
     <div class="stage-center-area">
-      <div class="main-orb-wrapper" id="mainOrbWrapper">
-        <canvas id="mainAIOralCanvas" width="420" height="420" title="Touch & Drag with finger to rotate 3D AUI"></canvas>
+      <div class="main-orb-wrapper" id="mainOrbWrapper" title="AUI को उंगली से खींचकर स्क्रीन पर कहीं भी ले जाएँ (Drag anywhere) • टैप करके बात करें">
+        <canvas id="mainAIOralCanvas" width="420" height="420"></canvas>
+      </div>
 
-        <!-- Secret Authorization Code Floating Pod (Only appears when core is tapped) -->
-        <div id="authCodeBadge" class="auth-code-badge hidden" title="Click to Quick-Authorize or Speak the Code">
-          <div class="auth-badge-header">
-            <i class="fa-solid fa-shield-halved"></i>
-            <span>MASTER AUTH CODE</span>
-          </div>
-          <div class="auth-code-digits" id="authCodeDigits">
-            <span class="auth-digit" id="authDigit0">-</span>
-            <span class="auth-digit" id="authDigit1">-</span>
-            <span class="auth-digit" id="authDigit2">-</span>
-          </div>
-          <div class="auth-badge-footer">
-            <span id="authVoiceHintText">बोलिए: "यह कोड" (या यहाँ टैप करें)</span>
-          </div>
-        </div>
+      <!-- Live Voice Call & Drag Controls -->
+      <div class="aui-action-controls">
+        <button id="voiceCallTriggerBtn" class="voice-call-trigger-btn" title="Click to start continuous voice conversation">
+          <span class="call-pulse-ring"></span>
+          <i class="fa-solid fa-microphone-lines" id="voiceCallBtnIcon"></i>
+          <span id="voiceCallBtnLabel">Tap to Talk • वॉयस कॉल शुरू करें</span>
+        </button>
+        <button id="resetAuiPosBtn" class="aui-reset-pos-btn" title="AUI को स्क्रीन के बीच में लाएं (Double-tap core or click here)">
+          <i class="fa-solid fa-arrows-to-dot"></i> Center
+        </button>
       </div>
 
       <!-- Minimalist Dynamic Subtitle HUD (Appears only when speaking/listening) -->
@@ -68,7 +64,7 @@
       </div>
 
       <!-- Quick Action Pills (Visible when Unlocked) -->
-      <div class="aui-quick-actions hidden" id="auiQuickActions">
+      <div class="aui-quick-actions" id="auiQuickActions">
         <button class="quick-pill-btn" id="quickSongBtn"><i class="fa-solid fa-music"></i> 🎵 Song Chalao</button>
         <button class="quick-pill-btn" id="quickVideoBtn"><i class="fa-brands fa-youtube"></i> 🎬 Video Chalao</button>
         <button class="quick-pill-btn stop" id="quickStopBtn"><i class="fa-solid fa-stop"></i> 🛑 Band Karo</button>
