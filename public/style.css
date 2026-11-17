@@ -844,22 +844,22 @@ html, body {
   left: 50%;
   transform: translate(-50%, -50%);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   margin: 0;
   padding: 0;
-  width: auto;
+  width: min(88vw, 420px);
+  height: min(88vw, 420px);
   z-index: 20;
   pointer-events: none;
 }
 
 .main-orb-wrapper {
   position: relative;
-  width: min(92vw, 440px);
-  height: min(92vw, 440px);
-  max-width: 92vw;
-  max-height: 92vw;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -870,6 +870,7 @@ html, body {
   cursor: grab;
   will-change: transform;
   pointer-events: auto;
+  margin: 0 auto;
 }
 
 .main-orb-wrapper:active,
@@ -1658,20 +1659,190 @@ html, body {
 }
 
 #mainAIOralCanvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain;
   pointer-events: auto;
   touch-action: none;
   cursor: grab;
   z-index: 10;
   user-select: none;
   -webkit-user-select: none;
+  display: block !important;
 }
 
 #mainAIOralCanvas:active {
   cursor: grabbing;
+}
+
+/* ========================================================
+   GEMINI LIVE & CHATGPT STYLE FLOATING MICROPHONE ACTION BAR
+   ======================================================== */
+.gemini-mic-bar {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 90;
+  pointer-events: auto;
+}
+
+.stage-mic-btn {
+  position: relative;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(0, 240, 255, 0.35), rgba(7, 10, 20, 0.95));
+  border: 2px solid rgba(0, 240, 255, 0.65);
+  color: #00f0ff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.4), inset 0 0 15px rgba(0, 240, 255, 0.25);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.stage-mic-btn:hover {
+  transform: scale(1.08);
+  border-color: #00f0ff;
+  box-shadow: 0 0 45px rgba(0, 240, 255, 0.7), inset 0 0 20px rgba(0, 240, 255, 0.4);
+}
+
+.stage-mic-btn:active {
+  transform: scale(0.95);
+}
+
+/* Pulsing Wave Rings around Mic (Gemini Live / Siri / ChatGPT style) */
+.stage-mic-btn .mic-wave-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 240, 255, 0.5);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage-mic-btn.listening .mic-wave-ring.r1 {
+  animation: micRipplePulse 2s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
+}
+
+.stage-mic-btn.listening .mic-wave-ring.r2 {
+  animation: micRipplePulse 2s cubic-bezier(0.1, 0.7, 0.3, 1) infinite 0.6s;
+}
+
+.stage-mic-btn.listening .mic-wave-ring.r3 {
+  animation: micRipplePulse 2s cubic-bezier(0.1, 0.7, 0.3, 1) infinite 1.2s;
+}
+
+@keyframes micRipplePulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.85;
+    border-color: rgba(0, 240, 255, 0.85);
+  }
+  100% {
+    transform: scale(1.85);
+    opacity: 0;
+    border-color: rgba(16, 185, 129, 0);
+  }
+}
+
+.stage-mic-btn.listening {
+  background: radial-gradient(circle at 35% 35%, rgba(16, 185, 129, 0.4), rgba(7, 10, 20, 0.95));
+  border-color: #10b981;
+  color: #10b981;
+  box-shadow: 0 0 40px rgba(16, 185, 129, 0.6), inset 0 0 20px rgba(16, 185, 129, 0.35);
+  animation: micBreathingGlow 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes micBreathingGlow {
+  0% {
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.4), inset 0 0 10px rgba(16, 185, 129, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 50px rgba(16, 185, 129, 0.85), inset 0 0 25px rgba(16, 185, 129, 0.5);
+  }
+}
+
+.stage-mic-btn.speaking {
+  background: radial-gradient(circle at 35% 35%, rgba(244, 114, 182, 0.4), rgba(7, 10, 20, 0.95));
+  border-color: #ec4899;
+  color: #f472b6;
+  box-shadow: 0 0 40px rgba(236, 72, 153, 0.65), inset 0 0 20px rgba(236, 72, 153, 0.35);
+  animation: micSpeakingWave 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes micSpeakingWave {
+  0% {
+    box-shadow: 0 0 25px rgba(236, 72, 153, 0.4), inset 0 0 10px rgba(236, 72, 153, 0.2);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 55px rgba(236, 72, 153, 0.9), inset 0 0 25px rgba(236, 72, 153, 0.5);
+    transform: scale(1.06);
+  }
+}
+
+/* Floating Status Pill under Mic */
+.stage-mic-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(13, 20, 38, 0.88);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-family: var(--font-cyber);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.mic-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+  display: inline-block;
+  animation: micLiveBlink 1.4s infinite ease-in-out;
+}
+
+@keyframes micLiveBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.75); }
+}
+
+.mic-live-dot.speaking {
+  background: #ec4899;
+  box-shadow: 0 0 10px #ec4899;
+}
+
+.mic-live-dot.muted {
+  background: #94a3b8;
+  box-shadow: none;
+  animation: none;
 }
 
 /* Dialogue Subtitle HUD */
@@ -2342,11 +2513,15 @@ html, body {
     padding: 11px 0;
     font-size: 16px;
   }
+  .stage-center-area {
+    width: min(90vw, 380px);
+    height: min(90vw, 380px);
+  }
   .main-orb-wrapper {
-    width: min(92vw, 380px);
-    height: min(92vw, 380px);
-    max-width: 92vw;
-    max-height: 92vw;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     aspect-ratio: 1 / 1;
   }
   .main-orb-touch-target {

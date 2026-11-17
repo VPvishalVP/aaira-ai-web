@@ -159,6 +159,14 @@
     // Minimalist Subtitle Stream
     stageDialogueState: document.getElementById('stageDialogueState'),
 
+    // Dedicated Gemini Live / ChatGPT Floating Microphone Bar
+    geminiMicBar: document.getElementById('geminiMicBar'),
+    stageMicTriggerBtn: document.getElementById('stageMicTriggerBtn'),
+    stageMicIcon: document.getElementById('stageMicIcon'),
+    stageMicLabel: document.getElementById('stageMicLabel'),
+    stageMicLiveDot: document.getElementById('stageMicLiveDot'),
+    stageMicStatusText: document.getElementById('stageMicStatusText'),
+
     // Floating Dynamic HUDs (Hidden until voice commanded!)
     musicOverlayHUD: document.getElementById('musicOverlayHUD'),
     videoOverlayHUD: document.getElementById('videoOverlayHUD'),
@@ -864,6 +872,21 @@
     return arr;
   }
 
+  function resizeThreeDCanvas() {
+    if (!threeRenderer || !threeCamera || !DOM.mainOrbWrapper || !DOM.mainAIOralCanvas) return;
+    const rect = DOM.mainOrbWrapper.getBoundingClientRect();
+    const size = Math.round(rect.width > 0 ? rect.width : Math.min(window.innerWidth * 0.88, 420));
+
+    DOM.mainAIOralCanvas.style.removeProperty('width');
+    DOM.mainAIOralCanvas.style.removeProperty('height');
+
+    threeRenderer.setSize(size, size, false);
+    threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+    threeCamera.aspect = 1;
+    threeCamera.updateProjectionMatrix();
+  }
+
   function initThreeDCore() {
     if (!window.THREE || !DOM.mainAIOralCanvas) {
       initFallback2DCanvas();
@@ -871,11 +894,14 @@
     }
 
     try {
-      const width = 480;
-      const height = 480;
+      DOM.mainAIOralCanvas.style.removeProperty('width');
+      DOM.mainAIOralCanvas.style.removeProperty('height');
+
+      const rect = DOM.mainOrbWrapper ? DOM.mainOrbWrapper.getBoundingClientRect() : null;
+      const size = Math.round(rect && rect.width > 0 ? rect.width : Math.min(window.innerWidth * 0.88, 420));
 
       threeScene = new THREE.Scene();
-      threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      threeCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
       threeCamera.position.z = 240;
 
       threeRenderer = new THREE.WebGLRenderer({
@@ -884,8 +910,13 @@
         antialias: true,
         powerPreference: 'high-performance'
       });
-      threeRenderer.setSize(width, height);
+      threeRenderer.setSize(size, size, false);
       threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+      window.addEventListener('resize', resizeThreeDCanvas);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(resizeThreeDCanvas, 150);
+      });
 
       threeGroup = new THREE.Group();
       threeScene.add(threeGroup);
@@ -1011,8 +1042,8 @@
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     const dist = Math.hypot(clientX - centerX, clientY - centerY);
-    // Center nucleus radius is ~48px (diameter ~96px)
-    return dist <= 48;
+    const maxRadius = Math.max(38, Math.min(rect.width * 0.18, 56));
+    return dist <= maxRadius;
   }
 
   function initAUIPosition() {
@@ -1572,6 +1603,7 @@
       if (!clean) clean = "जी मास्टर विहुहुहु, मैंने काम कर दिया है!";
 
       state.isSpeaking = true;
+      updateStageMicUI('speaking');
       if (DOM.geminiAmbientGlow) {
         DOM.geminiAmbientGlow.classList.remove('listening');
         DOM.geminiAmbientGlow.classList.add('speaking');
@@ -1617,6 +1649,7 @@
           DOM.stageDialogueState.classList.add('visible');
           DOM.stageDialogueState.innerHTML = '🟢 <span style="color:#00f0ff; font-weight:700;">सुन रही हूँ...</span> बोलिए प्यारे मास्टर 🌸';
         }
+        updateStageMicUI('listening');
 
         if (onDone) onDone();
 
@@ -1877,10 +1910,7 @@
 
     speechRecognizer.onstart = () => {
       state.isListening = true;
-      if (DOM.geminiAmbientGlow && !state.isSpeaking) {
-        DOM.geminiAmbientGlow.classList.remove('speaking');
-        DOM.geminiAmbientGlow.classList.add('listening');
-      }
+      updateStageMicUI('listening');
       if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.add('listening');
       if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.add('listening');
       if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.add('listening');
@@ -1919,6 +1949,8 @@
     speechRecognizer.onerror = (err) => {
       console.warn('[SpeechRec error]', err.error);
       if (err.error === 'not-allowed') {
+        updateStageMicUI('idle');
+        if (DOM.stageMicStatusText) DOM.stageMicStatusText.textContent = 'माइक Allow करें • टैप करें';
         if (DOM.stageDialogueState) {
           DOM.stageDialogueState.textContent = '⚠️ Mic Permission Denied. कृपया ब्राउज़र में माइक Allow करें।';
         }
@@ -1946,8 +1978,8 @@
 
     speechRecognizer.onend = () => {
       state.isListening = false;
-      if (DOM.geminiAmbientGlow && !state.isSpeaking) {
-        DOM.geminiAmbientGlow.classList.remove('listening');
+      if (!state.isSpeaking) {
+        updateStageMicUI('idle');
       }
       if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.remove('listening');
       if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.remove('listening');
@@ -1983,6 +2015,70 @@
     dispatchVoiceCommand(transcript);
   }
 
+  // Update Gemini Live / ChatGPT Floating Mic Bar UI
+  function updateStageMicUI(mode) {
+    if (!DOM.stageMicTriggerBtn) return;
+
+    DOM.stageMicTriggerBtn.classList.remove('listening', 'speaking');
+    if (DOM.stageMicLiveDot) DOM.stageMicLiveDot.classList.remove('speaking', 'muted');
+
+    if (mode === 'listening') {
+      DOM.stageMicTriggerBtn.classList.add('listening');
+      if (DOM.stageMicIcon) DOM.stageMicIcon.className = 'fa-solid fa-microphone';
+      if (DOM.stageMicStatusText) DOM.stageMicStatusText.textContent = 'माइक्रोफ़ोन चालू है • बोलिए मास्टर';
+      if (DOM.geminiAmbientGlow && !state.isSpeaking) {
+        DOM.geminiAmbientGlow.classList.remove('speaking');
+        DOM.geminiAmbientGlow.classList.add('listening');
+      }
+    } else if (mode === 'speaking') {
+      DOM.stageMicTriggerBtn.classList.add('speaking');
+      if (DOM.stageMicLiveDot) DOM.stageMicLiveDot.classList.add('speaking');
+      if (DOM.stageMicIcon) DOM.stageMicIcon.className = 'fa-solid fa-waveform-lines';
+      if (DOM.stageMicStatusText) DOM.stageMicStatusText.textContent = 'AAIRA बोल रही है...';
+      if (DOM.geminiAmbientGlow) {
+        DOM.geminiAmbientGlow.classList.remove('listening');
+        DOM.geminiAmbientGlow.classList.add('speaking');
+      }
+    } else {
+      if (DOM.stageMicLiveDot) DOM.stageMicLiveDot.classList.add('muted');
+      if (DOM.stageMicIcon) DOM.stageMicIcon.className = 'fa-solid fa-microphone-slash';
+      if (DOM.stageMicStatusText) DOM.stageMicStatusText.textContent = 'माइक बंद है • टैप करके बोलें';
+      if (DOM.geminiAmbientGlow) {
+        DOM.geminiAmbientGlow.classList.remove('listening', 'speaking');
+      }
+    }
+  }
+
+  // Toggle stage microphone with user gesture
+  function toggleStageMic() {
+    primeMobileMedia();
+
+    // If AI is currently speaking, barge-in / interrupt!
+    if (state.isSpeaking) {
+      if (sharedAudioTTS) {
+        try { sharedAudioTTS.pause(); } catch(_) {}
+      }
+      if ('speechSynthesis' in window) {
+        try { window.speechSynthesis.cancel(); } catch(_) {}
+      }
+      state.isSpeaking = false;
+      startListening();
+      updateStageMicUI('listening');
+      return;
+    }
+
+    if (state.isListening) {
+      try {
+        if (speechRecognizer) speechRecognizer.stop();
+      } catch(_) {}
+      state.isListening = false;
+      updateStageMicUI('idle');
+    } else {
+      startListening();
+      updateStageMicUI('listening');
+    }
+  }
+
   function startListening() {
     releaseHardwareMic(); // Make sure NO getUserMedia lock exists!
     if (!speechRecognizer) initSpeechRecognition();
@@ -1993,11 +2089,13 @@
         sharedAudioTTS.pause();
       }
       speechRecognizer.start();
+      updateStageMicUI('listening');
     } catch (_) {}
   }
 
   function stopListening() {
     state.isListening = false;
+    updateStageMicUI('idle');
     if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.remove('listening');
     if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.remove('listening');
     if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.remove('listening');
@@ -3087,6 +3185,18 @@
       DOM.bgToastClose.addEventListener('click', () => {
         if (DOM.bgAgentToast) DOM.bgAgentToast.classList.add('hidden');
       });
+    }
+
+    // Dedicated Gemini Live / ChatGPT Floating Microphone Button Click / Touch
+    if (DOM.stageMicTriggerBtn) {
+      DOM.stageMicTriggerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleStageMic();
+      });
+      DOM.stageMicTriggerBtn.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+        toggleStageMic();
+      }, { passive: false });
     }
 
     // Interaction primes audio and keeps voice session alive without any mic conflict

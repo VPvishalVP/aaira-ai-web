@@ -65,6 +65,20 @@
       <div class="aui-status-stream" id="stageDialogueState"></div>
     </div>
 
+    <!-- Dedicated Gemini Live / ChatGPT Style Floating Microphone Bar -->
+    <div class="gemini-mic-bar" id="geminiMicBar">
+      <button id="stageMicTriggerBtn" class="stage-mic-btn listening" title="माइक पर टैप करके बोलें (Microphone Live)">
+        <div class="mic-wave-ring r1"></div>
+        <div class="mic-wave-ring r2"></div>
+        <div class="mic-wave-ring r3"></div>
+        <i class="fa-solid fa-microphone" id="stageMicIcon"></i>
+      </button>
+      <div class="stage-mic-label" id="stageMicLabel">
+        <span class="mic-live-dot" id="stageMicLiveDot"></span>
+        <span id="stageMicStatusText">माइक्रोफ़ोन चालू है • बोलिए मास्टर</span>
+      </div>
+    </div>
+
     <!-- Floating Background Task HUD Toast -->
     <div id="bgAgentToast" class="bg-agent-toast hidden">
       <div class="bg-toast-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
