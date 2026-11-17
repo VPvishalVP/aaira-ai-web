@@ -8,9 +8,96 @@ const { db, initDb } = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3010;
 const ADMIN_PASS = process.env.ADMIN_PASS || '811';
+
+// AI Gateway Configuration (FreeModel as Primary, Groq as Fallback)
+const FREEMODEL_API_KEY = process.env.FREEMODEL_API_KEY || 'fm_aedf57e0808c1dea6cc46e21c1611be6c12c8223eb7d55d7';
+const FREEMODEL_BASE_URL = process.env.FREEMODEL_BASE_URL || 'https://freemodel.in/v1';
+const FREEMODEL_MODEL = process.env.FREEMODEL_MODEL || 'qwen3.8-27b';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'qwen/qwen3.8-27b';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+let groq = null;
+if (process.env.GROQ_API_KEY) {
+  try {
+    groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  } catch (err) {
+    console.warn('[Groq Init Warn]:', err.message);
+  }
+}
+
+// FreeModel Candidate Models
+const FM_CANDIDATE_MODELS = [
+  FREEMODEL_MODEL,
+  'qwen3.8-27b',
+  'gemini-3.6-flash',
+  'gemini-3.7-flash',
+  'deepseek-v4.1-flash',
+  'gpt-5.5'
+].filter((v, i, a) => a.indexOf(v) === i);
+
+async function callAICompletion(messages, { temperature = 0.6, max_tokens = 3500 } = {}) {
+  // 1. Primary AI Provider: FreeModel
+  if (FREEMODEL_API_KEY) {
+    for (const m of FM_CANDIDATE_MODELS) {
+      try {
+        const res = await fetch(`${FREEMODEL_BASE_URL}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + FREEMODEL_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: m,
+            messages,
+            temperature,
+            max_tokens
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const content = data.choices?.[0]?.message?.content;
+          if (content) {
+            return { content, model: `freemodel/${m}`, provider: 'FreeModel' };
+          }
+        } else {
+          const errText = await res.text();
+          console.warn(`[FreeModel ${m} status ${res.status}]: ${errText.slice(0, 100)}`);
+        }
+      } catch (err) {
+        console.warn(`[FreeModel ${m} error]:`, err.message);
+      }
+    }
+  }
+
+  // 2. Fallback AI Provider: Groq
+  if (groq) {
+    const candidateGroqModels = [
+      GROQ_MODEL,
+      'qwen/qwen3.8-27b',
+      'openai/gpt-oss-120b',
+      'openai/gpt-oss-20b'
+    ].filter((v, i, a) => a.indexOf(v) === i);
+
+    for (const gm of candidateGroqModels) {
+      try {
+        const resp = await groq.chat.completions.create({
+          model: gm,
+          messages,
+          temperature,
+          max_tokens
+        });
+        const content = resp.choices?.[0]?.message?.content;
+        if (content) {
+          return { content, model: gm, provider: 'Groq' };
+        }
+      } catch (gErr) {
+        console.warn(`[Groq fallback ${gm} error]:`, gErr.message);
+      }
+    }
+  }
+
+  throw new Error('All AI models are currently rate limited. Please wait a moment and try again.');
+}
 
 // Middleware
 app.use(cors());
@@ -175,37 +262,10 @@ app.post('/api/chat', async (req, res) => {
 
     messages.push({ role: 'user', content: message.trim() });
 
-    // Call Groq API with automatic multi-model fallback
-    const candidateModels = [
-      GROQ_MODEL,
-      'openai/gpt-oss-120b',
-      'openai/gpt-oss-20b',
-      'qwen/qwen3.8-27b'
-    ].filter((v, i, a) => a.indexOf(v) === i);
-
-    let response = null;
-    let usedModel = GROQ_MODEL;
-
-    for (const m of candidateModels) {
-      try {
-        response = await groq.chat.completions.create({
-          model: m,
-          messages,
-          temperature: 0.6,
-          max_tokens: 3500
-        });
-        usedModel = m;
-        break;
-      } catch (modelErr) {
-        console.warn(`[Groq Model Warning] Model ${m} failed: ${modelErr.message}. Trying next fallback...`);
-      }
-    }
-
-    if (!response) {
-      throw new Error('All AI models are currently rate limited. Please wait a moment and try again.');
-    }
-
-    const reply = response.choices?.[0]?.message?.content || 'AAIRA ko process karne me samasya aayi. Kripya punah prayas karein.';
+    // Call Primary AI (FreeModel) with automatic fallback
+    const aiResult = await callAICompletion(messages, { temperature: 0.6, max_tokens: 3500 });
+    const reply = aiResult.content || 'AAIRA ko process karne me samasya aayi. Kripya punah prayas karein.';
+    const usedModel = aiResult.model;
 
     // Robust HTML code extraction
     let extractedCode = null;
@@ -336,21 +396,12 @@ Provide an ultra-sharp, insightful, practical, concise research brief in Hindi/H
       }
     ];
 
-    const models = [GROQ_MODEL, 'qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b'].filter((v, i, a) => a.indexOf(v) === i);
     let reply = '';
-    for (const m of models) {
-      try {
-        const completion = await groq.chat.completions.create({
-          model: m,
-          messages,
-          temperature: 0.5,
-          max_tokens: 500
-        });
-        reply = completion.choices?.[0]?.message?.content || '';
-        if (reply) break;
-      } catch (err) {
-        console.warn(`[BG Research Model Warning] ${m}: ${err.message}`);
-      }
+    try {
+      const aiResult = await callAICompletion(messages, { temperature: 0.5, max_tokens: 600 });
+      reply = aiResult.content || '';
+    } catch (err) {
+      console.warn('[BG Research AI Warning]:', err.message);
     }
 
     if (!reply) {
@@ -473,7 +524,8 @@ app.get('/api/health', (req, res) => {
     status: 'ONLINE',
     system: 'AAIRA AI Omnipotent Platform',
     version: '2.0-Quantum',
-    groqModel: GROQ_MODEL,
+    aiProvider: FREEMODEL_API_KEY ? 'FreeModel' : 'Groq',
+    aiModel: FREEMODEL_MODEL || GROQ_MODEL,
     time: new Date().toISOString()
   });
 });
@@ -487,5 +539,5 @@ app.use((req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[AAIRA WEB] Server running on http://0.0.0.0:${PORT}`);
   console.log(`[AAIRA WEB] Master Pass configured: ${ADMIN_PASS ? 'YES' : 'NO'}`);
-  console.log(`[AAIRA WEB] Groq Model: ${GROQ_MODEL}`);
+  console.log(`[AAIRA WEB] Primary AI: ${FREEMODEL_API_KEY ? 'FreeModel (' + FREEMODEL_MODEL + ')' : 'Groq (' + GROQ_MODEL + ')'}`);
 });
