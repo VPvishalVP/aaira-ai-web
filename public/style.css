@@ -461,6 +461,79 @@ html, body {
   box-shadow: 0 0 14px rgba(244, 114, 182, 0.5);
 }
 
+/* ========================================================
+   FULLSCREEN AMBIENT AURA FIELD (GEMINI LIVE & CHATGPT STYLE)
+   ======================================================== */
+.gemini-ambient-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 92vw;
+  height: 92vw;
+  max-width: 650px;
+  max-height: 650px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.25) 0%, rgba(168, 85, 247, 0.18) 45%, rgba(255, 0, 127, 0.08) 70%, transparent 88%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 2;
+  animation: geminiAuraBreathe 6s infinite ease-in-out;
+  transition: all 0.5s ease;
+}
+
+.gemini-ambient-glow.speaking {
+  background: radial-gradient(circle, rgba(255, 0, 127, 0.35) 0%, rgba(168, 85, 247, 0.28) 45%, rgba(0, 240, 255, 0.15) 75%, transparent 90%);
+  filter: blur(70px);
+  transform: translate(-50%, -50%) scale(1.22);
+  animation: geminiSpeakingPulse 1.8s infinite ease-in-out;
+}
+
+.gemini-ambient-glow.listening {
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.32) 0%, rgba(16, 185, 129, 0.24) 48%, rgba(56, 189, 248, 0.12) 75%, transparent 88%);
+  filter: blur(65px);
+  transform: translate(-50%, -50%) scale(1.15);
+  animation: geminiListeningBreathe 2.5s infinite ease-in-out;
+}
+
+@keyframes geminiAuraBreathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.75; }
+  50% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+}
+
+@keyframes geminiSpeakingPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.85; filter: blur(65px); }
+  50% { transform: translate(-50%, -50%) scale(1.35); opacity: 1; filter: blur(80px); }
+}
+
+@keyframes geminiListeningBreathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.22); opacity: 1; }
+}
+
+/* Concentric Fullscreen Expanding Ripple Rings */
+.gemini-pulse-rings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 95vw;
+  height: 95vw;
+  max-width: 680px;
+  max-height: 680px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 240, 255, 0.14);
+  pointer-events: none;
+  z-index: 2;
+  animation: geminiRingRipple 7s infinite linear;
+}
+
+@keyframes geminiRingRipple {
+  0% { transform: translate(-50%, -50%) scale(0.65); opacity: 0.7; }
+  50% { opacity: 0.35; border-color: rgba(168, 85, 247, 0.22); }
+  100% { transform: translate(-50%, -50%) scale(1.45); opacity: 0; }
+}
+
 /* Floating Minimalist Dashboard Button (Top Right) */
 .floating-dash-trigger-btn {
   position: absolute;
@@ -482,6 +555,10 @@ html, body {
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
   z-index: 40;
+}
+
+.floating-dash-trigger-btn.hidden {
+  display: none !important;
 }
 
 .floating-dash-trigger-btn:hover {
@@ -779,10 +856,10 @@ html, body {
 
 .main-orb-wrapper {
   position: relative;
-  width: 340px;
-  height: 340px;
-  max-width: 82vw;
-  max-height: 82vw;
+  width: min(92vw, 440px);
+  height: min(92vw, 440px);
+  max-width: 92vw;
+  max-height: 92vw;
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -2266,10 +2343,10 @@ html, body {
     font-size: 16px;
   }
   .main-orb-wrapper {
-    width: 300px;
-    height: 300px;
-    max-width: 82vw;
-    max-height: 82vw;
+    width: min(92vw, 380px);
+    height: min(92vw, 380px);
+    max-width: 92vw;
+    max-height: 92vw;
     aspect-ratio: 1 / 1;
   }
   .main-orb-touch-target {

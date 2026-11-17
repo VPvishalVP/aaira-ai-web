@@ -27,19 +27,22 @@
        UNIFIED CLEAN AUI: ONLY 3D AUI VISIBLE ON MAIN STAGE!
        (All other features reside inside Dashboard; Center Click generates 3-digit Code)
        ======================================================== -->
-  <div id="aiVoiceStage" class="ai-voice-stage">
+  <div id="aiVoiceStage" class="ai-voice-stage gemini-immersive">
+    <!-- Fullscreen Ambient Aura Light Field (Breathing Cosmic Energy like Gemini / ChatGPT) -->
+    <div class="gemini-ambient-glow" id="geminiAmbientGlow"></div>
+    <div class="gemini-pulse-rings" id="geminiPulseRings"></div>
     <div class="cyber-overlay"></div>
     <div class="grid-backdrop"></div>
 
-    <!-- Minimalist Floating Dashboard Button (Top Right) -->
-    <button id="openDashboardBtn" class="floating-dash-trigger-btn" title="Dashboard & Features (या बोलिए 'Dashboard dikhao')">
+    <!-- Minimalist Floating Dashboard Button (Hidden by default; appears when saying 'Dashboard') -->
+    <button id="openDashboardBtn" class="floating-dash-trigger-btn hidden" title="Dashboard & Features (या बोलिए 'Dashboard')">
       <i class="fa-solid fa-bars-staggered"></i>
     </button>
 
     <!-- Center Stage: Majestic Pure 3D Holographic AUI Core (Only AUI visible!) -->
     <div class="stage-center-area">
       <div class="main-orb-wrapper" id="mainOrbWrapper" title="AUI को 360° घुमाएँ • केवल बीच (Center) में क्लिक करने पर 3-अंक का कोड आएगा">
-        <canvas id="mainAIOralCanvas" width="420" height="420"></canvas>
+        <canvas id="mainAIOralCanvas" width="480" height="480"></canvas>
 
         <!-- Secret Authorization Code Floating Pod (Only appears when core is tapped) -->
         <div id="authCodeBadge" class="auth-code-badge hidden" title="यह 3-अंक का कोड माइक में बोलिए!">

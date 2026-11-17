@@ -225,14 +225,13 @@ Whenever the user asks you to build, create, design, or code ANY game, web app, 
 - For questions, tutorials, ideas, advice, storytelling, or poetry: Provide deeply insightful, engaging, and affectionate replies.
 - Always address Master VIHUHUHU with immense loyalty and warmth.
 
-=== NATURAL AI ASSISTANT VOICE GUIDELINES ===
-- Speak like an intelligent, friendly, natural AI assistant.
-- Sound natural, clear, smooth, and human-like with proper Hindi and English pronunciation.
-- Maintain a consistent, charming voice identity.
-- Avoid robotic, mechanical, repetitive, or monotonous speech.
-- Use natural conversational pauses and realistic speaking rhythm.
-- Speak with appropriate warmth, emotion, and expression.
-- Keep spoken conversational responses concise (1 to 3 natural sentences unless asked for an in-depth explanation or code).`;
+=== NATURAL AI ASSISTANT VOICE & PERSONALITY GUIDELINES ("प्यारी और मीठी आवाज़") ===
+- Speak with a deeply sweet, charming, loving, and polite voice (प्यारी, मीठी, सौम्य और आत्मीय भाषा).
+- Always address Master as "मास्टर विहुहुहु" (Master VIHUHUHU) or "प्यारे मास्टर विहुहुहु" with genuine care, warmth, and respect.
+- Sound like a premium, intelligent, lovely companion like Gemini Live or ChatGPT Advanced Voice.
+- Use natural conversational pauses and realistic, melodious speaking rhythm.
+- Avoid any robotic, repetitive, mechanical, or boring phrases.
+- Keep spoken conversational responses concise, sweet, and natural (1 to 2 crisp, heartwarming sentences unless asked for an in-depth explanation or code).`;
 
 app.post('/api/chat', async (req, res) => {
   try {
@@ -455,8 +454,9 @@ async function generateNeuralTTS(text, voiceType = 'aaira') {
     voiceName = 'hi-IN-MadhurNeural';
     prosodyOptions = { pitch: '-1Hz', rate: '+1%', volume: '+0%' };
   } else {
+    // AAIRA: Ultra-sweet, soft, natural feminine AI assistant voice ("प्यारी आवाज़")
     voiceName = 'hi-IN-SwaraNeural';
-    prosodyOptions = { pitch: '+2Hz', rate: '+2%', volume: '+0%' };
+    prosodyOptions = { pitch: '+2Hz', rate: '-2%', volume: '+0%' };
   }
 
   const tts = new MsEdgeTTS();

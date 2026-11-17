@@ -78,6 +78,11 @@
     voicePersonaToggleBtn: document.getElementById('voicePersonaToggleBtn'),
     currentVoicePersonaLabel: document.getElementById('currentVoicePersonaLabel'),
 
+    // Fullscreen Immersive Stage & Ambient Glow (Gemini Live / ChatGPT style)
+    aiVoiceStage: document.getElementById('aiVoiceStage'),
+    geminiAmbientGlow: document.getElementById('geminiAmbientGlow'),
+    geminiPulseRings: document.getElementById('geminiPulseRings'),
+
     // Center Quantum AI Core (AUI)
     mainOrbWrapper: document.getElementById('mainOrbWrapper'),
     mainAIOralCanvas: document.getElementById('mainAIOralCanvas'),
@@ -866,8 +871,8 @@
     }
 
     try {
-      const width = 420;
-      const height = 420;
+      const width = 480;
+      const height = 480;
 
       threeScene = new THREE.Scene();
       threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
@@ -1087,8 +1092,12 @@
       }
     }
 
-    // Touch events for Mobile Phones (Silky finger screen drag + 2-finger pinch zoom)
-    target.addEventListener('touchstart', (e) => {
+    // Touch events for Mobile Phones (Silky full-screen finger drag + 2-finger pinch zoom like Gemini)
+    const stageSurface = DOM.aiVoiceStage || target;
+    stageSurface.addEventListener('touchstart', (e) => {
+      if (e.target.closest('.feature-overlay-hud:not(.hidden), .youtube-direct-overlay:not(.hidden), button, a, input, textarea')) {
+        return;
+      }
       if (e.touches && e.touches.length === 2) {
         userHasRotated3D = true;
         isPinching3D = true;
@@ -1103,6 +1112,13 @@
         onPointerStart(e.touches[0].clientX, e.touches[0].clientY);
       }
     }, { passive: false });
+
+    stageSurface.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.feature-overlay-hud:not(.hidden), .youtube-direct-overlay:not(.hidden), button, a, input, textarea')) {
+        return;
+      }
+      onPointerStart(e.clientX, e.clientY);
+    });
 
     window.addEventListener('touchmove', (e) => {
       if (isPinching3D && e.touches && e.touches.length === 2) {
@@ -1556,6 +1572,10 @@
       if (!clean) clean = "जी मास्टर विहुहुहु, मैंने काम कर दिया है!";
 
       state.isSpeaking = true;
+      if (DOM.geminiAmbientGlow) {
+        DOM.geminiAmbientGlow.classList.remove('listening');
+        DOM.geminiAmbientGlow.classList.add('speaking');
+      }
       if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.add('speaking');
       if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.add('speaking');
       if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.add('speaking');
@@ -1563,10 +1583,11 @@
         DOM.voiceRecorderStream.classList.add('speaking');
       }
       if (DOM.recStatusLabel) {
-        DOM.recStatusLabel.textContent = '🌸 AI SPEAKING...';
+        DOM.recStatusLabel.textContent = '🌸 AAIRA SPEAKING...';
       }
       if (DOM.stageDialogueState) {
-        DOM.stageDialogueState.textContent = 'Speaking... (बोल रही हूँ)';
+        DOM.stageDialogueState.classList.add('visible');
+        DOM.stageDialogueState.innerHTML = '🌸 <span style="color:#ff007f; font-weight:700;">आएरा बोल रही है...</span>';
       }
 
       // Pause mic while speaking so AI does not hear her own voice
@@ -1579,6 +1600,10 @@
         if (finished) return;
         finished = true;
         state.isSpeaking = false;
+        if (DOM.geminiAmbientGlow) {
+          DOM.geminiAmbientGlow.classList.remove('speaking');
+          DOM.geminiAmbientGlow.classList.add('listening');
+        }
         if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.remove('speaking');
         if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.remove('speaking');
         if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.remove('speaking');
@@ -1589,7 +1614,8 @@
           DOM.recStatusLabel.textContent = '🟢 24/7 VOICE RECORDER ACTIVE';
         }
         if (DOM.stageDialogueState) {
-          DOM.stageDialogueState.textContent = '🟢 सुन रही हूँ... बोलिए मास्टर विहुहुहु 🌸';
+          DOM.stageDialogueState.classList.add('visible');
+          DOM.stageDialogueState.innerHTML = '🟢 <span style="color:#00f0ff; font-weight:700;">सुन रही हूँ...</span> बोलिए प्यारे मास्टर 🌸';
         }
 
         if (onDone) onDone();
@@ -1599,7 +1625,7 @@
           if (!state.isSpeaking && (state.unlocked || state.voiceCallActive)) {
             startListening();
           }
-        }, 150);
+        }, 120);
       };
 
       const profile = VOICE_PROFILES[state.voiceProfileIndex] || VOICE_PROFILES[0];
@@ -1611,9 +1637,14 @@
           try {
             window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(clean);
+            const voices = window.speechSynthesis.getVoices() || [];
+            const hiVoice = voices.find(v => (v.lang.includes('hi') || v.lang.includes('IN')) && (v.name.includes('Swara') || v.name.includes('Female') || v.name.includes('Google') || v.name.includes('Neerja'))) ||
+                            voices.find(v => v.lang.includes('hi') || v.lang.includes('IN')) ||
+                            voices.find(v => v.name.includes('Natural') || v.name.includes('Female'));
+            if (hiVoice) utter.voice = hiVoice;
             utter.lang = 'hi-IN';
-            utter.rate = 1.0;
-            utter.pitch = (voiceParam === 'vihuhuhu' || state.activeVoicePersona === 'vihuhuhu') ? 0.9 : 1.1;
+            utter.rate = 0.95;
+            utter.pitch = (voiceParam === 'vihuhuhu' || state.activeVoicePersona === 'vihuhuhu') ? 0.9 : 1.15;
             utter.onend = onFinish;
             utter.onerror = onFinish;
             window.speechSynthesis.speak(utter);
@@ -1846,11 +1877,16 @@
 
     speechRecognizer.onstart = () => {
       state.isListening = true;
+      if (DOM.geminiAmbientGlow && !state.isSpeaking) {
+        DOM.geminiAmbientGlow.classList.remove('speaking');
+        DOM.geminiAmbientGlow.classList.add('listening');
+      }
       if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.add('listening');
       if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.add('listening');
       if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.add('listening');
       if (DOM.stageDialogueState) {
-        DOM.stageDialogueState.innerHTML = '🟢 <span style="color:#00f0ff;">MIC ACTIVE</span> • बोलिए, मैं सुन रही हूँ 🌸';
+        DOM.stageDialogueState.classList.add('visible');
+        DOM.stageDialogueState.innerHTML = '🟢 <span style="color:#00f0ff; font-weight:700;">सुन रही हूँ...</span> बोलिए प्यारे मास्टर 🌸';
       }
     };
 
@@ -1910,6 +1946,9 @@
 
     speechRecognizer.onend = () => {
       state.isListening = false;
+      if (DOM.geminiAmbientGlow && !state.isSpeaking) {
+        DOM.geminiAmbientGlow.classList.remove('listening');
+      }
       if (DOM.mainOrbBtn) DOM.mainOrbBtn.classList.remove('listening');
       if (DOM.mainAIOralCanvas) DOM.mainAIOralCanvas.classList.remove('listening');
       if (DOM.mainOrbWrapper) DOM.mainOrbWrapper.classList.remove('listening');
@@ -2250,13 +2289,18 @@
       return;
     }
 
-    // Command 4: DASHBOARD COMMAND ("Dashboard dikhao" / "All features dikhao")
-    if (lower.includes('dashboard') || lower.includes('डैशबोर्ड') || lower.includes('all feature') || lower.includes('features')) {
+    // Command 4: DASHBOARD COMMAND ("Dashboard dikhao" / "Dashboard" / "Dasbord" / "All features dikhao")
+    if (
+      lower.includes('dashboard') || lower.includes('dasbord') || lower.includes('deshboard') ||
+      lower.includes('डैशबोर्ड') || lower.includes('all feature') || lower.includes('features') ||
+      lower.includes('features dikhao') || lower.includes('dashboard kholo') || lower.includes('open dashboard')
+    ) {
+      if (DOM.openDashboardBtn) DOM.openDashboardBtn.classList.remove('hidden');
       closeAllHUDs();
       openHUD(DOM.dashboardOverlayHUD);
       loadCreationsVault();
-      updateDialogue(text, 'जी मास्टर! पूरा डैशबोर्ड और सभी फीचर्स आपके सामने हैं। 📊');
-      speakText('जी मास्टर विहुहुहु, पूरा डैशबोर्ड और सभी फीचर्स आपके सामने हैं!');
+      updateDialogue(text, 'जी प्यारे मास्टर विहुहुहु! पूरा डैशबोर्ड आपके सामने है। 📊🌸');
+      speakText('जी प्यारे मास्टर विहुहुहु, पूरा डैशबोर्ड और सभी फीचर्स आपके सामने हैं!');
       return;
     }
 
@@ -2434,10 +2478,14 @@
   function closeHUD(hudElem) {
     if (!hudElem) return;
     hudElem.classList.add('hidden');
+    if (hudElem === DOM.dashboardOverlayHUD && DOM.openDashboardBtn) {
+      DOM.openDashboardBtn.classList.add('hidden');
+    }
   }
 
   function closeAllHUDs() {
     stopDirectYouTube();
+    if (DOM.openDashboardBtn) DOM.openDashboardBtn.classList.add('hidden');
     DOM.musicOverlayHUD.classList.add('hidden');
     DOM.videoOverlayHUD.classList.add('hidden');
     DOM.sandboxOverlayHUD.classList.add('hidden');
