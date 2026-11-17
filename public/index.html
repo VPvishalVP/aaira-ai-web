@@ -82,6 +82,7 @@
           </div>
           <div class="player-mode-switch">
             <button id="switchHtmlVideoBtn" class="mode-pill-btn active" title="Play High-Def 4K Cyber Video">🎬 4K Video</button>
+            <button id="switchMusicBtn" class="mode-pill-btn" title="Play Guaranteed Lo-Fi Music">🎵 Music</button>
             <button id="switchYoutubeBtn" class="mode-pill-btn" title="Play YouTube Stream">📺 YouTube</button>
           </div>
           <button id="closeYoutubeOverlayBtn" class="youtube-close-btn" title="Band Karein (या बोलिए 'Band karo')">
@@ -91,6 +92,43 @@
         <div class="youtube-iframe-container" id="directMediaContainer">
           <video id="directHtmlVideo" class="direct-html-video" controls playsinline loop src="demo-video.mp4" poster="anime-bg.jpg"></video>
           <iframe id="directYoutubePlayer" class="hidden" src="" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+
+          <!-- Direct Dedicated Music Visualizer Box -->
+          <div id="directMusicBox" class="direct-music-box hidden">
+            <div class="direct-music-disc-wrap">
+              <div class="direct-music-disc spinning" id="directMusicDisc">
+                <div class="direct-disc-inner">
+                  <div class="direct-disc-center">🎧</div>
+                </div>
+              </div>
+            </div>
+            <div class="direct-music-info">
+              <div class="direct-music-title" id="directMusicTitle">Midnight Lo-Fi Chill Beats</div>
+              <div class="direct-music-artist" id="directMusicArtist">AAIRA Cyber Lo-Fi Radio</div>
+              <div class="direct-music-bars" id="directMusicBars">
+                <span class="bar b1"></span>
+                <span class="bar b2"></span>
+                <span class="bar b3"></span>
+                <span class="bar b4"></span>
+                <span class="bar b5"></span>
+                <span class="bar b6"></span>
+                <span class="bar b7"></span>
+              </div>
+              <div class="direct-music-controls">
+                <button id="directMusicPrevBtn" class="direct-ctrl-btn" title="Previous Track"><i class="fa-solid fa-backward-step"></i></button>
+                <button id="directMusicPlayPauseBtn" class="direct-ctrl-btn play" title="Play/Pause"><i class="fa-solid fa-pause" id="directPlayPauseIcon"></i></button>
+                <button id="directMusicNextBtn" class="direct-ctrl-btn" title="Next Track"><i class="fa-solid fa-forward-step"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mobile Chrome Tap-to-Play Overlay (Guaranteed sound bypass) -->
+          <button id="mediaTapToPlayBtn" class="media-tap-to-play-overlay hidden">
+            <div class="tap-play-pulse-ring"></div>
+            <div class="tap-play-icon"><i class="fa-solid fa-play"></i></div>
+            <div class="tap-play-text">TAP TO PLAY WITH SOUND</div>
+            <div class="tap-play-sub">Click anywhere to start sound</div>
+          </button>
         </div>
         <div class="youtube-direct-hint">
           <span>बोलिए: <strong>"Band karo"</strong> (वीडियो/गाना तुरंत बंद हो जाएगा)</span>

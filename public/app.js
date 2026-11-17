@@ -8,7 +8,7 @@
 
   // Global Application State
   const state = {
-    unlocked: false,
+    unlocked: true,
     activeAuthCode: null,
     ttsEnabled: true,
     isListening: false,
@@ -24,7 +24,8 @@
     voiceCallActive: false,
     bestVoice: null,
     activeVoicePersona: localStorage.getItem('aaira_voice_persona') || 'aaira',
-    voiceProfileIndex: localStorage.getItem('aaira_voice_persona') === 'vihuhuhu' ? 1 : 0
+    voiceProfileIndex: localStorage.getItem('aaira_voice_persona') === 'vihuhuhu' ? 1 : 0,
+    activePlayerMode: 'video'
   };
 
   // Premium Natural AI Voices Matching User Persona Directives:
@@ -105,10 +106,21 @@
     directYoutubePlayer: document.getElementById('directYoutubePlayer'),
     directHtmlVideo: document.getElementById('directHtmlVideo'),
     switchHtmlVideoBtn: document.getElementById('switchHtmlVideoBtn'),
+    switchMusicBtn: document.getElementById('switchMusicBtn'),
     switchYoutubeBtn: document.getElementById('switchYoutubeBtn'),
     directPlayerIcon: document.getElementById('directPlayerIcon'),
     youtubeOverlayTitle: document.getElementById('youtubeOverlayTitle'),
     closeYoutubeOverlayBtn: document.getElementById('closeYoutubeOverlayBtn'),
+    directMusicBox: document.getElementById('directMusicBox'),
+    directMusicDisc: document.getElementById('directMusicDisc'),
+    directMusicTitle: document.getElementById('directMusicTitle'),
+    directMusicArtist: document.getElementById('directMusicArtist'),
+    directMusicBars: document.getElementById('directMusicBars'),
+    directMusicPrevBtn: document.getElementById('directMusicPrevBtn'),
+    directMusicPlayPauseBtn: document.getElementById('directMusicPlayPauseBtn'),
+    directMusicNextBtn: document.getElementById('directMusicNextBtn'),
+    directPlayPauseIcon: document.getElementById('directPlayPauseIcon'),
+    mediaTapToPlayBtn: document.getElementById('mediaTapToPlayBtn'),
 
     // 3D Zoom Controls
     auiZoomControlPill: document.getElementById('auiZoomControlPill'),
@@ -1641,8 +1653,49 @@
   // ========================================================
   let speechRecognizer = null;
 
+  const SHAPES_LIST = ['SPHERE', 'CUBE', 'TORUS', 'CRYSTAL', 'VORTEX', 'DNA', 'HEART', 'PYRAMID', 'STAR', 'SATURN', 'INFINITY', 'FLOWER', 'CYLINDER'];
+
+  function cycleNextAuiShape() {
+    const currentIndex = SHAPES_LIST.indexOf(state.auiShape || 'SPHERE');
+    const nextIndex = (currentIndex + 1) % SHAPES_LIST.length;
+    const nextShape = SHAPES_LIST[nextIndex];
+    morphTo3DShape(nextShape);
+    return nextShape;
+  }
+
   function checkAndHandleMorphCommand(text) {
     const lower = text.toLowerCase().trim();
+
+    // 0. GENERAL AUI MORPH / CYCLE COMMAND ("aui badlo", "aui badlna", "shape badlo", "shape badalna", "aui change", "aui badal do")
+    if (
+      lower.includes('aui badal') || lower.includes('aui badl') || lower.includes('aui change') ||
+      lower.includes('shape badal') || lower.includes('shape badl') || lower.includes('shape change') ||
+      lower.includes('aui morph') || lower.includes('roop badal') || lower.includes('aakar badal') ||
+      lower.includes('kuch naya banao') || lower.includes('badlo') || lower.includes('badalna') ||
+      lower.includes('बदलो') || lower.includes('बदलना') || lower.includes('आकार') || lower.includes('रूप')
+    ) {
+      const newShape = cycleNextAuiShape();
+      if (DOM.stageDialogueState) {
+        DOM.stageDialogueState.classList.add('visible');
+        DOM.stageDialogueState.innerHTML = `✨ <strong>AUI MORPH: ${SHAPE_PRESETS[newShape] || newShape}</strong>`;
+        setTimeout(() => { if (!state.isSpeaking && !state.isListening) DOM.stageDialogueState.classList.remove('visible'); }, 2500);
+      }
+      return true;
+    }
+
+    // 0.1 360 Spin Command ("aui 360", "360 ghumao", "rotate karo")
+    if (lower.includes('360') || lower.includes('rotate') || lower.includes('spin') || lower.includes('ghumao') || lower.includes('घुमाओ')) {
+      if (threeGroup) {
+        rotSpeedY = 0.08;
+        rotSpeedX = 0.04;
+      }
+      if (DOM.stageDialogueState) {
+        DOM.stageDialogueState.classList.add('visible');
+        DOM.stageDialogueState.innerHTML = '🔄 <strong>AUI 360° Rotation Active</strong>';
+        setTimeout(() => { if (!state.isSpeaking && !state.isListening) DOM.stageDialogueState.classList.remove('visible'); }, 2500);
+      }
+      return true;
+    }
 
     // 1. CUBE / TESSERACT ("Cube banao", "Dabba banao", "Matrix karo")
     if (lower.includes('cube') || lower.includes('box') || lower.includes('dabba') || lower.includes('matrix') || lower.includes('tesseract') || lower.includes('क्यूब') || lower.includes('डब्बा') || lower.includes('चौकोर')) {
@@ -1874,18 +1927,14 @@
   function handleSpokenInput(transcript) {
     if (!transcript) return;
 
-    // When locked: ONLY speaking the secret 3-digit code unlocks the AI!
-    if (!state.unlocked) {
-      if (verifySpokenAuthCode(transcript)) {
-        authorizeMaster();
-        return;
-      }
-      if (DOM.stageDialogueState) {
-        DOM.stageDialogueState.classList.add('visible');
-        DOM.stageDialogueState.innerHTML = `<span style="color:#ffcc00;">🎤 सुना: "${escapeHtml(transcript)}" • कोड बोलिए: "${state.activeAuthCode || 'कोड'}"</span>`;
-      }
+    // Check if user is speaking the secret 3-digit auth code
+    if (state.activeAuthCode && verifySpokenAuthCode(transcript)) {
+      authorizeMaster();
       return;
     }
+
+    // Always ensure Master is unlocked when giving commands
+    state.unlocked = true;
 
     // When unlocked: execute any 3D morph, voice command, or conversational chat!
     if (checkAndHandleMorphCommand(transcript)) {
@@ -1927,38 +1976,83 @@
   }
 
   // ========================================================
-  // CYBER 4K VIDEO & DIRECT YOUTUBE MEDIA ENGINE
+  // CYBER 4K VIDEO & DIRECT MEDIA ENGINE (VIDEO, MUSIC, YOUTUBE)
   // ========================================================
   function setPlayerMode(mode) {
-    if (mode === 'html') {
+    state.activePlayerMode = mode;
+    if (mode === 'html' || mode === 'video') {
       if (DOM.switchHtmlVideoBtn) DOM.switchHtmlVideoBtn.classList.add('active');
+      if (DOM.switchMusicBtn) DOM.switchMusicBtn.classList.remove('active');
       if (DOM.switchYoutubeBtn) DOM.switchYoutubeBtn.classList.remove('active');
       if (DOM.directPlayerIcon) DOM.directPlayerIcon.className = 'fa-solid fa-film';
       if (DOM.directHtmlVideo) DOM.directHtmlVideo.classList.remove('hidden');
+      if (DOM.directMusicBox) DOM.directMusicBox.classList.add('hidden');
       if (DOM.directYoutubePlayer) {
         DOM.directYoutubePlayer.classList.add('hidden');
         DOM.directYoutubePlayer.src = '';
+      }
+      if (DOM.mainAudioPlayer) {
+        DOM.mainAudioPlayer.pause();
       }
       if (DOM.directHtmlVideo) {
         DOM.directHtmlVideo.muted = false;
         DOM.directHtmlVideo.volume = 1.0;
         const playPromise = DOM.directHtmlVideo.play();
         if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            // Autoplay policy fallback: mute first to guarantee playback
-            DOM.directHtmlVideo.muted = true;
-            DOM.directHtmlVideo.play().catch(() => {});
+          playPromise.then(() => {
+            if (DOM.mediaTapToPlayBtn) DOM.mediaTapToPlayBtn.classList.add('hidden');
+          }).catch(() => {
+            // Autoplay policy fallback: show tap to play
+            if (DOM.mediaTapToPlayBtn) DOM.mediaTapToPlayBtn.classList.remove('hidden');
+          });
+        }
+      }
+    } else if (mode === 'music') {
+      if (DOM.switchHtmlVideoBtn) DOM.switchHtmlVideoBtn.classList.remove('active');
+      if (DOM.switchMusicBtn) DOM.switchMusicBtn.classList.add('active');
+      if (DOM.switchYoutubeBtn) DOM.switchYoutubeBtn.classList.remove('active');
+      if (DOM.directPlayerIcon) DOM.directPlayerIcon.className = 'fa-solid fa-music';
+      if (DOM.directMusicBox) DOM.directMusicBox.classList.remove('hidden');
+      if (DOM.directHtmlVideo) {
+        DOM.directHtmlVideo.pause();
+        DOM.directHtmlVideo.classList.add('hidden');
+      }
+      if (DOM.directYoutubePlayer) {
+        DOM.directYoutubePlayer.classList.add('hidden');
+        DOM.directYoutubePlayer.src = '';
+      }
+      if (DOM.mainAudioPlayer) {
+        DOM.mainAudioPlayer.muted = false;
+        DOM.mainAudioPlayer.volume = 1.0;
+        const playPromise = DOM.mainAudioPlayer.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            if (DOM.mediaTapToPlayBtn) DOM.mediaTapToPlayBtn.classList.add('hidden');
+            if (DOM.directMusicDisc) {
+              DOM.directMusicDisc.classList.remove('paused');
+              DOM.directMusicDisc.classList.add('spinning');
+            }
+            if (DOM.directPlayPauseIcon) DOM.directPlayPauseIcon.className = 'fa-solid fa-pause';
+          }).catch(() => {
+            if (DOM.mediaTapToPlayBtn) DOM.mediaTapToPlayBtn.classList.remove('hidden');
           });
         }
       }
     } else {
+      // YouTube mode
       if (DOM.switchHtmlVideoBtn) DOM.switchHtmlVideoBtn.classList.remove('active');
+      if (DOM.switchMusicBtn) DOM.switchMusicBtn.classList.remove('active');
       if (DOM.switchYoutubeBtn) DOM.switchYoutubeBtn.classList.add('active');
       if (DOM.directPlayerIcon) DOM.directPlayerIcon.className = 'fa-brands fa-youtube';
       if (DOM.directHtmlVideo) {
         DOM.directHtmlVideo.pause();
         DOM.directHtmlVideo.classList.add('hidden');
       }
+      if (DOM.directMusicBox) DOM.directMusicBox.classList.add('hidden');
+      if (DOM.mainAudioPlayer) {
+        DOM.mainAudioPlayer.pause();
+      }
+      if (DOM.mediaTapToPlayBtn) DOM.mediaTapToPlayBtn.classList.add('hidden');
       if (DOM.directYoutubePlayer) DOM.directYoutubePlayer.classList.remove('hidden');
     }
   }
@@ -1966,14 +2060,21 @@
   function playDirectCyberVideo(title = 'CYBER 4K VIDEO CENTER') {
     closeAllHUDs();
     if (DOM.youtubeOverlayTitle) DOM.youtubeOverlayTitle.textContent = title;
-    setPlayerMode('html');
+    setPlayerMode('video');
     if (DOM.youtubeDirectOverlay) {
       DOM.youtubeDirectOverlay.classList.remove('hidden');
     }
     if (DOM.directHtmlVideo) {
       DOM.directHtmlVideo.muted = false;
       DOM.directHtmlVideo.volume = 1.0;
-      DOM.directHtmlVideo.play().catch(() => {});
+      const playPromise = DOM.directHtmlVideo.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          if (DOM.mediaTapToPlayBtn) DOM.mediaTapToPlayBtn.classList.add('hidden');
+        }).catch(() => {
+          if (DOM.mediaTapToPlayBtn) DOM.mediaTapToPlayBtn.classList.remove('hidden');
+        });
+      }
     }
   }
 
@@ -1987,18 +2088,18 @@
     if (clean.includes('youtube.com') || clean.includes('youtu.be')) {
       const match = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
       const vidId = match ? match[1] : '';
-      embedSrc = vidId ? `https://www.youtube.com/embed/${vidId}?autoplay=1&enablejsapi=1` : clean;
+      embedSrc = vidId ? `https://www.youtube.com/embed/${vidId}?autoplay=1&playsinline=1&enablejsapi=1` : clean;
     } else {
       const lower = clean.toLowerCase();
       // Verified Embeddable Videos with ZERO copyright/embed errors!
       if (lower.includes('arijit') || lower.includes('bollywood') || lower.includes('hindi')) {
-        embedSrc = 'https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1&enablejsapi=1';
+        embedSrc = 'https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1&playsinline=1&enablejsapi=1';
       } else if (lower.includes('anime') || lower.includes('cyberpunk') || lower.includes('4k')) {
-        embedSrc = 'https://www.youtube.com/embed/4xDzrJKXOOY?autoplay=1&enablejsapi=1';
+        embedSrc = 'https://www.youtube.com/embed/4xDzrJKXOOY?autoplay=1&playsinline=1&enablejsapi=1';
       } else if (lower.includes('sidhu') || lower.includes('punjabi')) {
-        embedSrc = 'https://www.youtube.com/embed/DWcJFNfaw9c?autoplay=1&enablejsapi=1';
+        embedSrc = 'https://www.youtube.com/embed/DWcJFNfaw9c?autoplay=1&playsinline=1&enablejsapi=1';
       } else {
-        embedSrc = 'https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1&enablejsapi=1';
+        embedSrc = 'https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1&playsinline=1&enablejsapi=1';
       }
     }
 
@@ -2018,6 +2119,15 @@
     if (DOM.directYoutubePlayer) {
       DOM.directYoutubePlayer.src = '';
     }
+    if (DOM.mainAudioPlayer) {
+      try { DOM.mainAudioPlayer.pause(); } catch (_) {}
+    }
+    if (DOM.directMusicDisc) {
+      DOM.directMusicDisc.classList.add('paused');
+    }
+    if (DOM.mediaTapToPlayBtn) {
+      DOM.mediaTapToPlayBtn.classList.add('hidden');
+    }
     if (DOM.youtubeDirectOverlay) {
       DOM.youtubeDirectOverlay.classList.add('hidden');
     }
@@ -2035,31 +2145,25 @@
       try { window.speechSynthesis.cancel(); } catch(_) {}
     }
     state.isSpeaking = false;
+    state.unlocked = true;
 
     // 2. Play Local Guaranteed Music or Direct YouTube Stream
     const lower = (query || '').toLowerCase();
     if (lower.includes('youtube') || lower.includes('arijit') || lower.includes('sidhu') || lower.includes('punjabi') || lower.includes('bollywood')) {
       playDirectYouTube(query || 'hindi lofi songs', 'YouTube Music Stream');
-    } else {
-      let trackIdx = 0;
-      if (lower.includes('synth') || lower.includes('pulse')) trackIdx = 1;
-      else if (lower.includes('anime') || lower.includes('sunset')) trackIdx = 2;
-
-      loadTrack(trackIdx);
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume().catch(() => {});
-      }
-      if (DOM.mainAudioPlayer) {
-        DOM.mainAudioPlayer.muted = false;
-        DOM.mainAudioPlayer.volume = 1.0;
-        const playPromise = DOM.mainAudioPlayer.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            playDirectCyberVideo('CYBER 4K MUSIC & VIDEO');
-          });
-        }
-      }
+      return;
     }
+
+    let trackIdx = 0;
+    if (lower.includes('synth') || lower.includes('pulse')) trackIdx = 1;
+    else if (lower.includes('anime') || lower.includes('sunset')) trackIdx = 2;
+
+    loadTrack(trackIdx);
+
+    if (DOM.youtubeOverlayTitle) DOM.youtubeOverlayTitle.textContent = '🎵 CYBER LO-FI MUSIC PLAYER';
+    if (DOM.youtubeDirectOverlay) DOM.youtubeDirectOverlay.classList.remove('hidden');
+
+    setPlayerMode('music');
 
     // 3. AI DOES NOT SPEAK! Silent visual subtitle only:
     if (DOM.stageDialogueState) {
@@ -2083,6 +2187,7 @@
       try { window.speechSynthesis.cancel(); } catch(_) {}
     }
     state.isSpeaking = false;
+    state.unlocked = true;
 
     // 2. Launch Cyber 4K Video immediately!
     playDirectCyberVideo(title);
@@ -2127,15 +2232,20 @@
 
     // Command 2: MUSIC / SONG COMMAND (SILENT PLAYBACK - AI DOES NOT SPEAK!)
     if (
-      lower.includes('gaana') || lower.includes('music') || lower.includes('song') ||
-      lower.includes('गाना') || lower.includes('गीत') || lower.includes('lofi')
+      lower.includes('gaana') || lower.includes('gana') || lower.includes('music') || lower.includes('song') ||
+      lower.includes('audio') || lower.includes('lofi') || lower.includes('गाना') || lower.includes('गीत') ||
+      lower.includes('धुन') || lower.includes('bajao') || lower.includes('baja do') || lower.includes('sunao')
     ) {
       playMusicNow(text);
       return;
     }
 
     // Command 3: VIDEO COMMAND (SILENT PLAYBACK - AI DOES NOT SPEAK!)
-    if (lower.includes('video') || lower.includes('वीडियो') || lower.includes('movie') || lower.includes('anime') || lower.includes('film')) {
+    if (
+      lower.includes('video') || lower.includes('vedeo') || lower.includes('vedio') || lower.includes('vdo') ||
+      lower.includes('वीडियो') || lower.includes('movie') || lower.includes('anime') || lower.includes('film') ||
+      lower.includes('cinema')
+    ) {
       playVideoNow('CYBER 4K VIDEO CENTER');
       return;
     }
@@ -2503,9 +2613,11 @@
     if (index < 0 || index >= PLAYLIST.length) return;
     state.currentTrackIndex = index;
     const track = PLAYLIST[index];
-    DOM.mainAudioPlayer.src = track.url;
-    DOM.currentTrackName.textContent = track.title;
-    DOM.currentTrackArtist.textContent = track.artist;
+    if (DOM.mainAudioPlayer) DOM.mainAudioPlayer.src = track.url;
+    if (DOM.currentTrackName) DOM.currentTrackName.textContent = track.title;
+    if (DOM.currentTrackArtist) DOM.currentTrackArtist.textContent = track.artist;
+    if (DOM.directMusicTitle) DOM.directMusicTitle.textContent = track.title;
+    if (DOM.directMusicArtist) DOM.directMusicArtist.textContent = track.artist;
     renderPlaylist();
   }
 
@@ -2785,6 +2897,62 @@
       DOM.closeYoutubeOverlayBtn.addEventListener('click', stopDirectYouTube);
     }
 
+    // Media Switch Mode Buttons (Video, Music, YouTube)
+    if (DOM.switchHtmlVideoBtn) {
+      DOM.switchHtmlVideoBtn.addEventListener('click', () => setPlayerMode('video'));
+    }
+    if (DOM.switchMusicBtn) {
+      DOM.switchMusicBtn.addEventListener('click', () => setPlayerMode('music'));
+    }
+    if (DOM.switchYoutubeBtn) {
+      DOM.switchYoutubeBtn.addEventListener('click', () => setPlayerMode('youtube'));
+    }
+
+    // Direct Music Visualizer Controls
+    if (DOM.directMusicPrevBtn) {
+      DOM.directMusicPrevBtn.addEventListener('click', playPrevTrack);
+    }
+    if (DOM.directMusicNextBtn) {
+      DOM.directMusicNextBtn.addEventListener('click', playNextTrack);
+    }
+    if (DOM.directMusicPlayPauseBtn) {
+      DOM.directMusicPlayPauseBtn.addEventListener('click', () => {
+        toggleAudioPlay();
+        const isPaused = DOM.mainAudioPlayer ? DOM.mainAudioPlayer.paused : true;
+        if (DOM.directPlayPauseIcon) DOM.directPlayPauseIcon.className = isPaused ? 'fa-solid fa-play' : 'fa-solid fa-pause';
+        if (DOM.directMusicDisc) {
+          if (isPaused) {
+            DOM.directMusicDisc.classList.add('paused');
+            DOM.directMusicDisc.classList.remove('spinning');
+          } else {
+            DOM.directMusicDisc.classList.remove('paused');
+            DOM.directMusicDisc.classList.add('spinning');
+          }
+        }
+      });
+    }
+
+    // Mobile Chrome Tap to Play Sound Bypass
+    if (DOM.mediaTapToPlayBtn) {
+      DOM.mediaTapToPlayBtn.addEventListener('click', () => {
+        if (DOM.mediaTapToPlayBtn) DOM.mediaTapToPlayBtn.classList.add('hidden');
+        if (state.activePlayerMode === 'music') {
+          if (DOM.mainAudioPlayer) {
+            DOM.mainAudioPlayer.muted = false;
+            DOM.mainAudioPlayer.play().catch(() => {});
+          }
+          if (DOM.directMusicDisc) {
+            DOM.directMusicDisc.classList.remove('paused');
+            DOM.directMusicDisc.classList.add('spinning');
+          }
+          if (DOM.directPlayPauseIcon) DOM.directPlayPauseIcon.className = 'fa-solid fa-pause';
+        } else if (DOM.directHtmlVideo) {
+          DOM.directHtmlVideo.muted = false;
+          DOM.directHtmlVideo.play().catch(() => {});
+        }
+      });
+    }
+
     // Close HUD Buttons
     DOM.hudCloseBtns.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -2876,7 +3044,7 @@
     // Interaction primes audio and keeps voice session alive without any mic conflict
     const ensureMicListening = () => {
       primeMobileMedia();
-      if (state.voiceCallActive && !state.isSpeaking) {
+      if ((state.unlocked || state.voiceCallActive) && !state.isSpeaking && !state.isListening) {
         startListening();
       }
     };
@@ -2897,6 +3065,11 @@
   window.addEventListener('DOMContentLoaded', () => {
     initCompanionFeatures();
     setupEventListeners();
+
+    // Auto-listen for Master VIHUHUHU voice commands immediately on startup
+    setTimeout(() => {
+      startListening();
+    }, 500);
   });
 
 })();
